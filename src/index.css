@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background: #03040a;
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(125, 211, 252, 0.3);
+}
+
+/* thin scrollbar inside the info panel */
+aside::-webkit-scrollbar {
+  width: 6px;
+}
+aside::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.14);
+  border-radius: 3px;
+}
