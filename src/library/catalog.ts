@@ -1,10 +1,3 @@
-/**
- * Real astronomical catalogue data (loaded lazily as static JSON, no runtime API):
- *   stars  – Hipparcos + Yale Bright Star (position, magnitude, B–V colour)
- *   dsos   – Charles Messier's catalogue (Hubble's Messier Catalog targets)
- *   lines  – IAU constellation figures / boundaries
- *   mw     – Milky Way isophotes (Axel Mellinger all-sky panorama)
- */
 import starsUrl from 'd3-celestial/data/stars.6.json?url';
 import starNamesUrl from 'd3-celestial/data/starnames.json?url';
 import conLinesUrl from 'd3-celestial/data/constellations.lines.json?url';
@@ -18,11 +11,11 @@ export interface Stars {
   ra: Float32Array;
   dec: Float32Array;
   mag: Float32Array;
-  ci: Uint8Array; // colour bucket 0..47
+  ci: Uint8Array;
   hip: Int32Array;
   name: (string | null)[];
   desig: (string | null)[];
-  named: number[]; // indices with a proper name, brightest first
+  named: number[];
 }
 
 export interface Dso {
@@ -97,7 +90,6 @@ function ringToRaDec(coords: number[][]): Float32Array {
 
 const norm = (s: string) => s.replace(/\s+/g, '').toUpperCase();
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export async function loadCatalog(onProgress?: (p: number) => void): Promise<Catalog> {
   let done = 0;
   const tick = <T,>(p: Promise<T>) => p.then((v) => (onProgress?.(++done / 7), v));
@@ -108,7 +100,6 @@ export async function loadCatalog(onProgress?: (p: number) => void): Promise<Cat
     tick(getJSON<any>(messierUrl)), tick(getJSON<any>(dsoNamesUrl)), tick(getJSON<any>(mwUrl)),
   ]);
 
-  /* ---- stars ---- */
   const feats: any[] = starsRaw.features;
   const n = feats.length;
   const stars: Stars = {
@@ -134,7 +125,6 @@ export async function loadCatalog(onProgress?: (p: number) => void): Promise<Cat
   }
   stars.named.sort((a, b) => stars.mag[a] - stars.mag[b]);
 
-  /* ---- deep sky objects (Messier) ---- */
   const nameByKey: Record<string, string> = {};
   for (const k of Object.keys(dsoNames)) {
     const v = dsoNames[k];
@@ -157,7 +147,6 @@ export async function loadCatalog(onProgress?: (p: number) => void): Promise<Cat
   });
   dsos.sort((a, b) => (a.messier ?? 999) - (b.messier ?? 999));
 
-  /* ---- constellation figures + names ---- */
   const conLines: ConLine[] = (linesRaw.features as any[]).map((f) => ({
     id: String(f.id),
     segs: (f.geometry.coordinates as number[][][]).map(ringToRaDec),
@@ -170,7 +159,6 @@ export async function loadCatalog(onProgress?: (p: number) => void): Promise<Cat
     rank: Number(f.properties.rank ?? 3),
   }));
 
-  /* ---- milky way isophotes ---- */
   const mw: MwLevel[] = (mwRaw.features as any[]).map((f, idx) => {
     const rings: Float32Array[] = [];
     const g = f.geometry;

@@ -1,7 +1,3 @@
-/**
- * NASA Image and Video Library (images-api.nasa.gov) — public, CORS-enabled,
- * no API key. Pulls the real Hubble / NASA photograph of the selected object.
- */
 export interface NasaPhoto {
   title: string;
   description: string;
@@ -69,7 +65,6 @@ function toPhoto(item: RawItem): NasaPhoto | null {
   };
 }
 
-/** Best photograph of an object. `queries` are tried in order; highest score wins. */
 export async function findPhoto(key: string, queries: string[], tokens: string[]): Promise<NasaPhoto | null> {
   if (cache.has(key)) return cache.get(key) ?? null;
   const lowered = tokens.map((t) => t.toLowerCase()).filter(Boolean);
@@ -80,7 +75,7 @@ export async function findPhoto(key: string, queries: string[], tokens: string[]
       const s = score(it, lowered);
       if (s > bestScore) { bestScore = s; best = it; }
     }
-    if (bestScore >= 8) break; // good enough, stop hitting the API
+    if (bestScore >= 8) break;
   }
   const photo = best && bestScore > 0 ? toPhoto(best) : null;
   cache.set(key, photo);

@@ -26,7 +26,6 @@ function fits(boxes: Box[], b: Box): boolean {
   return true;
 }
 
-/* --------------------------------- NASA Hubble Skymap background (Gaia) --- */
 const NASA_BG = 'https://science.nasa.gov/specials/apps/hubble-skymap/messier//background_image_set/';
 let bgImage: HTMLImageElement | null = null;
 let bgReady = false;
@@ -41,21 +40,20 @@ export function loadNasaBackground(onUpdate: () => void): void {
     };
     img.src = NASA_BG + file;
   };
-  load('image-1.jpg', false); // fast preview
-  load('image.jpg', true);    // full high-res
+  load('image-1.jpg', false);
+  load('image.jpg', true);
 }
 
 function drawNasaBackground(ctx: CanvasRenderingContext2D, v: View) {
   if (!bgReady || !bgImage) return;
   const skyW = 360 * v.scale;
   const skyH = 180 * v.scale;
-  const topY = v.cy + (v.dec - 90) * v.scale; // Dec +90° = top edge
-  let x = v.cx + wrapLon(-180 - v.ra) * v.scale; // RA -180° = left edge
+  const topY = v.cy + (v.dec - 90) * v.scale;
+  let x = v.cx + wrapLon(-180 - v.ra) * v.scale;
   while (x > 0) x -= skyW;
   for (; x < v.w; x += skyW) ctx.drawImage(bgImage, x, topY, skyW, skyH);
 }
 
-/* -------------------------------------------------------------- polylines */
 function strokePoints(ctx: CanvasRenderingContext2D, v: View, ra: number[], dec: number[]) {
   let pen = false, prevRa = 0;
   for (let i = 0; i < ra.length; i++) {
@@ -80,7 +78,6 @@ function strokeRing(ctx: CanvasRenderingContext2D, v: View, ring: Float32Array, 
   if (close && pen) ctx.closePath();
 }
 
-/* ---------------------------------------------------------------- layers */
 function drawMilkyWay(ctx: CanvasRenderingContext2D, v: View, cat: Catalog) {
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
@@ -112,13 +109,11 @@ function drawGrid(ctx: CanvasRenderingContext2D, v: View) {
   }
   ctx.stroke();
 
-  // celestial equator
   ctx.beginPath();
   ctx.strokeStyle = 'rgba(120,170,255,0.35)';
   { const d: number[] = [], r: number[] = []; for (let x = -180; x <= 180; x++) { r.push(x); d.push(0); } strokePoints(ctx, v, r, d); }
   ctx.stroke();
 
-  // ecliptic (obliquity 23.4393°)
   ctx.beginPath();
   ctx.strokeStyle = 'rgba(255,206,120,0.32)';
   ctx.setLineDash([5, 5]);
@@ -183,7 +178,6 @@ function drawStars(ctx: CanvasRenderingContext2D, v: View, cat: Catalog, labels:
   }
   ctx.globalAlpha = 1;
 
-  // soft halo on the brightest stars
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   for (let k = 0; k < bright.length; k += 4) {
@@ -332,7 +326,6 @@ export function drawSky(
   ctx.restore();
 }
 
-/** Nearest clickable object to a screen point, or null. */
 export function pick(v: View, cat: Catalog, mx: number, my: number, layers: Layers): Selection | null {
   let best: Selection | null = null;
   let bestD = 24 * 24;
@@ -350,7 +343,7 @@ export function pick(v: View, cat: Catalog, mx: number, my: number, layers: Laye
   for (let i = 0; i < s.n; i++) {
     if (s.mag[i] > 5.2 || !projectRaDec(v, s.ra[i], s.dec[i])) continue;
     const dd = (OUT.x - mx) ** 2 + (OUT.y - my) ** 2;
-    const w = dd + s.mag[i] * 6; // prefer brighter stars when they overlap
+    const w = dd + s.mag[i] * 6;
     if (dd < 400 && w < starD) { starD = w; starBest = { kind: 'star', index: i }; }
   }
   if (starBest && (!best || starD < bestD)) return starBest;

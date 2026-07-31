@@ -17,7 +17,7 @@ interface Target {
 }
 
 const LAYER_LABELS: { key: keyof Layers; label: string }[] = [
-  { key: 'background', label: 'Background'},
+  { key: 'background', label: 'Background' },
   { key: 'constellations', label: 'Constellations' },
   { key: 'deepSky', label: 'Deep sky' },
   { key: 'grid', label: 'Grid' },
@@ -48,7 +48,6 @@ export default function StarMap() {
   const layersRef = useRef(layers);
   layersRef.current = layers;
 
-  /* --------------------------------------------------------------- load */
   useEffect(() => {
     let alive = true;
     loadNasaBackground(() => { if (alive) dirty.current = true; });
@@ -58,7 +57,6 @@ export default function StarMap() {
     return () => { alive = false; };
   }, []);
 
-  /* ------------------------------------------------------------- resize */
   useEffect(() => {
     const el = wrapRef.current, cv = canvasRef.current;
     if (!el || !cv) return;
@@ -79,7 +77,6 @@ export default function StarMap() {
     return () => ro.disconnect();
   }, []);
 
-  /* ---------------------------------------------------------- render loop */
   useEffect(() => {
     let raf = 0, hudTick = 0, pulseTick = 0;
     const loop = (t: number) => {
@@ -114,7 +111,6 @@ export default function StarMap() {
 
   useEffect(() => { dirty.current = true; }, [layers, selected]);
 
-  /* ---------------------------------------------------------- navigation */
   const panPixels = useCallback((dx: number, dy: number) => {
     const v = viewRef.current;
     v.ra -= dx / v.scale;
@@ -141,7 +137,6 @@ export default function StarMap() {
     anim.current = { t0: performance.now(), from: [v.ra, v.dec, v.fov], to: [ra, dec, clamp(fov, 0.25, 175)] };
   }, []);
 
-  /* ------------------------------------------------------------ pointers */
   useEffect(() => {
     const cv = canvasRef.current;
     if (!cv) return;
@@ -198,7 +193,6 @@ export default function StarMap() {
     };
   }, [catalog, panPixels, zoomAt]);
 
-  /* -------------------------------------------------------------- search */
   const targets = useMemo<Target[]>(() => {
     if (!catalog) return [];
     const out: Target[] = [];
@@ -242,7 +236,6 @@ export default function StarMap() {
     setQuery('');
   }, [flyTo]);
 
-  /* ---------------------------------------------------- selected object info */
   const selInfo = useMemo(() => {
     if (!catalog || !selected) return null;
     if (selected.kind === 'dso') {
@@ -304,11 +297,8 @@ export default function StarMap() {
         </div>
       )}
 
-      {/* title + search + layers */}
       <div className="pointer-events-none absolute top-0 left-0 z-20 flex w-full items-start justify-between gap-3 p-3 sm:p-4">
         <div className="pointer-events-auto w-[58%] max-w-sm min-w-[9rem]">
-          <div className="mb-2 flex flex-wrap items-baseline gap-x-2">
-          </div>
           <div className="relative">
             <input
               value={query}
@@ -318,7 +308,7 @@ export default function StarMap() {
                 if (e.key === 'Escape') setQuery('');
               }}
               placeholder="Search…"
-              className="w-full rounded-lg border border-white/12 bg-black/55 px-3 py-2 text-sm text-white/90 placeholder-white/30 outline-none backdrop-blur-md focus:border-sky-300/45"
+              className="w-full rounded-md border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 outline-none backdrop-blur-md transition focus:border-white/30 focus:ring-1 focus:ring-white/20"
             />
             {results.length > 0 && (
               <ul className="absolute top-full left-0 z-30 mt-1.5 w-full overflow-hidden rounded-lg border border-white/12 bg-black/85 backdrop-blur-xl">
@@ -340,10 +330,10 @@ export default function StarMap() {
             <button
               key={l.key}
               onClick={() => setLayers((s) => ({ ...s, [l.key]: !s[l.key] }))}
-              className={`rounded-md border px-2 py-1 font-mono text-[10px] tracking-wide backdrop-blur-md transition ${
+              className={`rounded-md border px-2.5 py-1 font-mono text-[10px] tracking-wider transition-all duration-150 ${
                 layers[l.key]
-                  ? 'border-sky-300/40 bg-sky-300/15 text-sky-100'
-                  : 'border-white/10 bg-black/40 text-white/40 hover:text-white/70'
+                  ? 'border-white/30 bg-white/15 text-white shadow-sm'
+                  : 'border-white/10 bg-zinc-900/60 text-zinc-400 hover:border-white/20 hover:text-zinc-200'
               }`}
             >
               {l.label}
@@ -352,12 +342,10 @@ export default function StarMap() {
         </div>
       </div>
 
-      {/* HUD */}
       <div className="pointer-events-none absolute bottom-3 left-3 z-20 font-mono text-[10px] leading-relaxed text-white/45 sm:bottom-4 sm:left-4">
         <div className="text-white/30">FIELD {zoomLabel} · drag to pan · scroll to zoom</div>
       </div>
 
-      {/* zoom buttons */}
       <div className="absolute right-3 bottom-3 z-20 flex flex-col gap-1.5 sm:right-4 sm:bottom-4">
         <button onClick={() => zoomAt(0.66)} className="h-8 w-8 rounded-md border border-white/12 bg-black/50 text-white/70 backdrop-blur-md hover:text-white">+</button>
         <button onClick={() => zoomAt(1.5)} className="h-8 w-8 rounded-md border border-white/12 bg-black/50 text-white/70 backdrop-blur-md hover:text-white">−</button>
