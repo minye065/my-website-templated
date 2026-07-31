@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   loadCatalog, type Catalog, type Dso, DSO_TYPE, dsoFamily, FAMILY_COLOR,
-} from '../lib/catalog';
-import { drawSky, loadNasaBackground, pick, type Layers, type Selection } from '../lib/render';
-import { clamp, makeView, updateView, wrapLon, bv2temp } from '../lib/sky';
+} from '../library/catalog';
+import { drawSky, loadNasaBackground, pick, type Layers, type Selection } from '../library/render';
+import { clamp, makeView, updateView, wrapLon, bv2temp } from '../library/sky';
 import InfoPanel from './InfoPanel';
 
 interface Target {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { findPhoto, type NasaPhoto } from '../lib/nasa';
+import { findPhoto, type NasaPhoto } from '../library/nasa';
 
 export interface ObjectInfo {
   key: string;
