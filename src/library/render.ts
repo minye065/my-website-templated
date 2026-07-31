@@ -163,6 +163,9 @@ function drawStars(ctx: CanvasRenderingContext2D, v: View, cat: Catalog, labels:
   const bright: number[] = [];
 
   for (let i = 0; i < s.n; i++) {
+    // Skip stars without names or designations (random unnamed points)
+    if (!s.name[i] && !s.desig[i]) continue;
+
     if (!projectRaDec(v, s.ra[i], s.dec[i])) continue;
     const px = OUT.x, py = OUT.y;
     if (px < -20 || py < -20 || px > w + 20 || py > h + 20) continue;
