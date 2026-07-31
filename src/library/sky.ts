@@ -20,11 +20,12 @@ export function makeView(): View {
 }
 
 export function updateView(v: View) {
-  v.dec = clamp(v.dec, -85, 85);
-  v.fov = clamp(v.fov, 0.5, 160);
-  v.scale = v.w / (v.fov * (Math.PI / 180));
   v.cx = v.w / 2;
   v.cy = v.h / 2;
+  v.fov = clamp(v.fov, 0.25, 175);
+  v.dec = clamp(v.dec, -85, 85);
+  v.ra = wrapLon(v.ra);
+  v.scale = Math.min(v.w, v.h) / v.fov;
 }
 
 export const OUT = { x: 0, y: 0, ok: false };
