@@ -17,10 +17,9 @@ interface Target {
 }
 
 const LAYER_LABELS: { key: keyof Layers; label: string }[] = [
-  { key: 'background', label: 'NASA Sky Map' },
-  { key: 'constellations', label: 'Figures' },
+  { key: 'background', label: 'Background'},
+  { key: 'constellations', label: 'Constellations' },
   { key: 'deepSky', label: 'Deep sky' },
-  { key: 'milkyway', label: 'Milky Way' },
   { key: 'grid', label: 'Grid' },
   { key: 'labels', label: 'Labels' },
 ];
@@ -309,8 +308,6 @@ export default function StarMap() {
       <div className="pointer-events-none absolute top-0 left-0 z-20 flex w-full items-start justify-between gap-3 p-3 sm:p-4">
         <div className="pointer-events-auto w-[58%] max-w-sm min-w-[9rem]">
           <div className="mb-2 flex flex-wrap items-baseline gap-x-2">
-            <h1 className="text-[13px] font-semibold tracking-[0.22em] text-white/85">STARMAP</h1>
-            <span className="font-mono text-[10px] text-sky-200/45">real sky · NASA + Hubble</span>
           </div>
           <div className="relative">
             <input
@@ -320,7 +317,7 @@ export default function StarMap() {
                 if (e.key === 'Enter' && results[0]) goTo(results[0]);
                 if (e.key === 'Escape') setQuery('');
               }}
-              placeholder="Search M31, Orion, Vega…"
+              placeholder="Search…"
               className="w-full rounded-lg border border-white/12 bg-black/55 px-3 py-2 text-sm text-white/90 placeholder-white/30 outline-none backdrop-blur-md focus:border-sky-300/45"
             />
             {results.length > 0 && (
@@ -357,7 +354,7 @@ export default function StarMap() {
 
       {/* HUD */}
       <div className="pointer-events-none absolute bottom-3 left-3 z-20 font-mono text-[10px] leading-relaxed text-white/45 sm:bottom-4 sm:left-4">
-        <div className="text-white/30">FIELD {zoomLabel} · drag to pan · scroll to zoom · click an object</div>
+        <div className="text-white/30">FIELD {zoomLabel} · drag to pan · scroll to zoom</div>
       </div>
 
       {/* zoom buttons */}
