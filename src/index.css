@@ -14,7 +14,6 @@ body {
   background: rgba(125, 211, 252, 0.3);
 }
 
-/* thin scrollbar inside the info panel */
 aside::-webkit-scrollbar {
   width: 6px;
 }

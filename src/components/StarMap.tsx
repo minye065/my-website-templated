@@ -330,9 +330,9 @@ export default function StarMap() {
             <button
               key={l.key}
               onClick={() => setLayers((s) => ({ ...s, [l.key]: !s[l.key] }))}
-              className={`rounded-md border px-2.5 py-1 font-mono text-[10px] tracking-wider transition-all duration-150 ${
+              className={`rounded-sm border px-2.5 py-1 font-mono text-[10px] tracking-wider transition-all duration-150 ${
                 layers[l.key]
-                  ? 'border-white/30 bg-white/15 text-white shadow-sm'
+                  ? 'border-violet/30 bg-rgba(48, 25, 52, 0.47) text-white shadow-sm hover:bg-rgba(48,25,52,0.8)'
                   : 'border-white/10 bg-zinc-900/60 text-zinc-400 hover:border-white/20 hover:text-zinc-200'
               }`}
             >
@@ -347,11 +347,11 @@ export default function StarMap() {
       </div>
 
       <div className="absolute right-3 bottom-3 z-20 flex flex-col gap-1.5 sm:right-4 sm:bottom-4">
-        <button onClick={() => zoomAt(0.66)} className="h-8 w-8 rounded-md border border-white/12 bg-black/50 text-white/70 backdrop-blur-md hover:text-white">+</button>
-        <button onClick={() => zoomAt(1.5)} className="h-8 w-8 rounded-md border border-white/12 bg-black/50 text-white/70 backdrop-blur-md hover:text-white">−</button>
+        <button onClick={() => zoomAt(0.66)} className="h-8 w-8 rounded border border-white/12 bg-black/50 text-white/70 backdrop-blur-md hover:text-white">+</button>
+        <button onClick={() => zoomAt(1.5)} className="h-8 w-8 rounded border border-white/12 bg-black/50 text-white/70 backdrop-blur-md hover:text-white">−</button>
         <button
           onClick={() => { flyTo(HOME.ra, HOME.dec, HOME.fov); setSelected(null); }}
-          className="h-8 w-8 rounded-md border border-white/12 bg-black/50 font-mono text-[10px] text-white/70 backdrop-blur-md hover:text-white"
+          className="h-8 w-8 rounded border border-white/12 bg-black/50 font-mono text-[10px] text-white/70 backdrop-blur-md hover:text-white"
         >⤢</button>
       </div>
 
