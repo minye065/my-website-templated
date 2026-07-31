@@ -332,7 +332,7 @@ export default function StarMap() {
               onClick={() => setLayers((s) => ({ ...s, [l.key]: !s[l.key] }))}
               className={`rounded-sm border px-2.5 py-1 font-mono text-[10px] tracking-wider transition-all duration-150 ${
                 layers[l.key]
-                  ? 'border-violet/30 bg-rgba(48, 25, 52, 0.47) text-white shadow-sm hover:bg-rgba(48,25,52,0.8)'
+                  ? 'border-violet/30 bg-[rgba(48,25,52,0.47)] text-white shadow-sm hover:bg-[rgba(48,25,52,0.8)]'
                   : 'border-white/10 bg-zinc-900/60 text-zinc-400 hover:border-white/20 hover:text-zinc-200'
               }`}
             >
