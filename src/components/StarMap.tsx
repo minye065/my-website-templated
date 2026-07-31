@@ -18,9 +18,7 @@ interface Target {
 
 const LAYER_LABELS: { key: keyof Layers; label: string }[] = [
   { key: 'background', label: 'Background' },
-  { key: 'constellations', label: 'Constellations' },
   { key: 'deepSky', label: 'Deep sky' },
-  { key: 'grid', label: 'Grid' },
   { key: 'labels', label: 'Labels' },
 ];
 
@@ -40,7 +38,7 @@ export default function StarMap() {
   const [hud, setHud] = useState(HOME);
   const [query, setQuery] = useState('');
   const [layers, setLayers] = useState<Layers>({
-    background: true, milkyway: false, constellations: true, grid: false, labels: true, deepSky: true,
+    background: true, milkyway: false, constellations: false, grid: false, labels: true, deepSky: true,
   });
 
   const selRef = useRef<Selection | null>(null);
@@ -207,10 +205,6 @@ export default function StarMap() {
       sub: `Star · ${s.desig[i] ?? `HIP ${s.hip[i]}`} · mag ${s.mag[i].toFixed(2)}`,
       ra: s.ra[i], dec: s.dec[i], fov: 12, sel: { kind: 'star', index: i },
     });
-    catalog.constellations.forEach((c, i) => out.push({
-      key: `c${i}`, label: c.name, sub: `Constellation · ${c.id}`,
-      ra: c.ra, dec: c.dec, fov: 46, sel: null,
-    }));
     return out;
   }, [catalog]);
 
@@ -308,7 +302,7 @@ export default function StarMap() {
                 if (e.key === 'Escape') setQuery('');
               }}
               placeholder="Search…"
-              className="w-full rounded-md border border-white/10 bg-zinc-950/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 outline-none backdrop-blur-md transition focus:border-white/30 focus:ring-1 focus:ring-white/20"
+              className="w-full rounded-md border border-[cdd4d76e] bg-zinc-950/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 outline-none backdrop-blur-md transition focus:border-[cdd4d7] focus:ring-1 focus:ring-white/20"
             />
             {results.length > 0 && (
               <ul className="absolute top-full left-0 z-30 mt-1.5 w-full overflow-hidden rounded-lg border border-white/12 bg-black/85 backdrop-blur-xl">
