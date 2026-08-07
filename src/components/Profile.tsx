@@ -31,6 +31,10 @@ export default function Profile() {
       className="pointer-events-auto max-h-[86vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/10 bg-[#090b14]/85 p-6 text-white/90 shadow-2xl backdrop-blur-xl sm:p-8"
       data-scroll
     >
+      <header data-reveal className="opacity-0">
+        <p className="mt-1 text-xs text-white/45">Bunch of stuff i made</p>
+      </header>
+
       <section data-reveal className="mt-6 opacity-0">
         <h2 className="font-mono text-[10px] tracking-[0.25em] text-white/35">PROJECTS</h2>
         <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
@@ -81,11 +85,6 @@ export default function Profile() {
           ))}
         </div>
       </section>
-
-      <p data-reveal className="mt-8 font-mono text-[10px] leading-relaxed text-white/25 opacity-0">
-        Click anywhere outside this card to take the wheel — pan, zoom and tap any star or nebula for its NASA
-        photograph. Esc brings you back.
-      </p>
     </div>
   );
 }
