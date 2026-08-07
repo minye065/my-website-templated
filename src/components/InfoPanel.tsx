@@ -121,13 +121,6 @@ export default function InfoPanel({
           </div>
         </div>
       )}
-
-      <button
-        onClick={onCenter}
-        className="mt-auto w-full shrink-0 rounded-md border border-white/15 bg-white/10 py-2 font-mono text-xs font-medium text-white hover:bg-white/20"
-      >
-        Center on star map
-      </button>
     </motion.aside>
   );
 }
