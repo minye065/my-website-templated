@@ -4,21 +4,33 @@
   color-scheme: dark;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+}
+
 body {
+  margin: 0;
   background: #03040a;
   overscroll-behavior: none;
   -webkit-font-smoothing: antialiased;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
 ::selection {
   background: rgba(125, 211, 252, 0.3);
 }
 
-aside::-webkit-scrollbar,
+[data-scroll] {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+
 [data-scroll]::-webkit-scrollbar {
   width: 6px;
 }
-aside::-webkit-scrollbar-thumb,
+
 [data-scroll]::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.14);
   border-radius: 3px;

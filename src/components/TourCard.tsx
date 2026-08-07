@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { findPhoto, type NasaPhoto } from '../library/nasa';
-import type { ObjectInfo } from './InfoPanel';
+import { findPhoto, type NasaPhoto } from '../lib/nasa';
+import type { ObjectInfo } from '../lib/info';
 
-/** Small ambient caption shown while the background drifts on its own. */
+/** Ambient caption shown while the sky drifts on its own. */
 export default function TourCard({ info }: { info: ObjectInfo }) {
   const [photo, setPhoto] = useState<NasaPhoto | null>(null);
 
@@ -13,22 +13,24 @@ export default function TourCard({ info }: { info: ObjectInfo }) {
     findPhoto(info.key, info.queries, info.tokens)
       .then((p) => alive && setPhoto(p))
       .catch(() => undefined);
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [info.key, info.queries, info.tokens]);
 
   return (
     <motion.div
       key={info.key}
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 6 }}
+      exit={{ opacity: 0, y: 8 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
-      className="pointer-events-none absolute bottom-4 left-4 z-10 hidden w-64 overflow-hidden rounded-lg border border-white/10 bg-black/60 backdrop-blur-md sm:block"
+      className="pointer-events-none absolute bottom-4 left-4 z-10 hidden w-60 overflow-hidden rounded-xl border border-white/10 bg-black/55 backdrop-blur-md sm:block"
     >
       {photo && (
-        <div className="h-32 w-full overflow-hidden">
+        <div className="h-28 w-full overflow-hidden">
           <img
-            src={photo.thumb}
+            src={photo.url}
             alt={photo.title}
             className="h-full w-full object-cover opacity-90"
             onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
@@ -40,11 +42,12 @@ export default function TourCard({ info }: { info: ObjectInfo }) {
           <span
             className="rounded px-1.5 py-0.5 font-mono text-[9.5px]"
             style={{ background: `${info.accent}22`, color: info.accent }}
-          >{info.badge}</span>
-          <span className="font-mono text-[9.5px] tracking-wide text-white/40">{info.kind}</span>
+          >
+            {info.badge}
+          </span>
+          <span className="font-mono text-[9.5px] tracking-wider text-white/40 uppercase">{info.kind}</span>
         </div>
-        <div className="mt-1 text-[13px] font-medium text-white/85">{info.title}</div>
-        {photo && <div className="mt-0.5 font-mono text-[9px] tracking-wide text-white/30">NASA IMAGE LIBRARY</div>}
+        <div className="mt-1 text-xs font-medium text-white">{info.title}</div>
       </div>
     </motion.div>
   );

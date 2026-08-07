@@ -1,49 +1,37 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence } from 'motion/react';
-import {
-  loadCatalog, type Catalog, type Dso, DSO_TYPE, dsoFamily, FAMILY_COLOR,
-} from '../library/catalog';
-import { drawSky, loadNasaBackground, pick, type Layers, type Selection } from '../library/render';
-import { clamp, makeView, updateView, wrapLon, bv2temp } from '../library/sky';
+import { AnimatePresence, motion } from 'motion/react';
+import { CATALOG } from '../lib/catalog';
+import { buildInfo } from '../lib/info';
+import { drawSky, loadNasaBackground, type Layers, pick, type Selection } from '../lib/render';
+import { clamp, HOME, makeView, updateView, wrapLon } from '../lib/sky';
 import InfoPanel from './InfoPanel';
 import TourCard from './TourCard';
 
-interface Target {
-  key: string;
-  label: string;
-  sub: string;
-  ra: number;
-  dec: number;
-  fov: number;
-  sel: Selection | null;
-}
-
 const LAYER_LABELS: { key: keyof Layers; label: string }[] = [
-  { key: 'background', label: 'Background' },
+  { key: 'background', label: 'Milky Way' },
   { key: 'deepSky', label: 'Deep sky' },
   { key: 'labels', label: 'Labels' },
 ];
 
-const HOME = { ra: 84, dec: -3, fov: 95 };
+interface SearchHit {
+  label: string;
+  sub: string;
+  sel: Selection;
+}
 
 export default function StarMap({ active }: { active: boolean }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewRef = useRef(makeView());
   const dirty = useRef(true);
-  const anim = useRef<{
-    t0: number; dur: number; from: [number, number, number]; to: [number, number, number];
-  } | null>(null);
+  const anim = useRef<{ t0: number; dur: number; from: [number, number, number]; to: [number, number, number] } | null>(
+    null,
+  );
 
-  const [catalog, setCatalog] = useState<Catalog | null>(null);
-  const [progress, setProgress] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const [ready, setReady] = useState(false);
   const [selected, setSelected] = useState<Selection | null>(null);
-  const [hud, setHud] = useState(HOME);
   const [query, setQuery] = useState('');
-  const [layers, setLayers] = useState<Layers>({
-    background: true, milkyway: false, labels: true, deepSky: true,
-  });
+  const [layers, setLayers] = useState<Layers>({ background: true, labels: true, deepSky: true });
 
   const selRef = useRef<Selection | null>(null);
   selRef.current = selected;
@@ -52,28 +40,34 @@ export default function StarMap({ active }: { active: boolean }) {
   const activeRef = useRef(active);
   activeRef.current = active;
 
+  const info = useMemo(() => (selected ? buildInfo(selected) : null), [selected]);
+
+  /* load NASA background */
   useEffect(() => {
-    let alive = true;
-    loadNasaBackground(() => { if (alive) dirty.current = true; });
-    loadCatalog((p) => alive && setProgress(p))
-      .then((c) => { if (alive) { setCatalog(c); dirty.current = true; } })
-      .catch((e) => alive && setError(String(e?.message ?? e)));
-    return () => { alive = false; };
+    loadNasaBackground(() => {
+      dirty.current = true;
+    });
+    const id = window.setTimeout(() => {
+      setReady(true);
+    }, 30);
+    return () => window.clearTimeout(id);
   }, []);
 
+  /* size the canvas */
   useEffect(() => {
-    const el = wrapRef.current, cv = canvasRef.current;
+    const el = wrapRef.current;
+    const cv = canvasRef.current;
     if (!el || !cv) return;
     const ro = new ResizeObserver(() => {
       const r = el.getBoundingClientRect();
       const v = viewRef.current;
-      v.w = r.width;
-      v.h = r.height;
+      v.w = Math.max(1, r.width);
+      v.h = Math.max(1, r.height);
       v.dpr = Math.min(window.devicePixelRatio || 1, 2);
-      cv.width = Math.round(r.width * v.dpr);
-      cv.height = Math.round(r.height * v.dpr);
-      cv.style.width = `${r.width}px`;
-      cv.style.height = `${r.height}px`;
+      cv.width = Math.round(v.w * v.dpr);
+      cv.height = Math.round(v.h * v.dpr);
+      cv.style.width = `${v.w}px`;
+      cv.style.height = `${v.h}px`;
       updateView(v);
       dirty.current = true;
     });
@@ -81,13 +75,17 @@ export default function StarMap({ active }: { active: boolean }) {
     return () => ro.disconnect();
   }, []);
 
+  /* render loop */
   useEffect(() => {
-    let raf = 0, hudTick = 0, pulseTick = 0, last = 0;
+    let raf = 0;
+    let pulseTick = 0;
+    let last = 0;
     const loop = (t: number) => {
       raf = requestAnimationFrame(loop);
       const dt = last ? Math.min(t - last, 100) : 16;
       last = t;
       const v = viewRef.current;
+
       if (anim.current) {
         const a = anim.current;
         const k = clamp((t - a.t0) / a.dur, 0, 1);
@@ -99,28 +97,28 @@ export default function StarMap({ active }: { active: boolean }) {
         dirty.current = true;
         if (k >= 1) anim.current = null;
       } else if (!activeRef.current) {
-        // Idle mode: the sky drifts on its own, slowly.
-        v.ra = wrapLon(v.ra + dt * 0.00007 * v.fov);
+        v.ra = wrapLon(v.ra + dt * 0.00008 * v.fov);
         updateView(v);
         dirty.current = true;
       }
-      if (selRef.current && t - pulseTick > 70) { pulseTick = t; dirty.current = true; }
-      if (!dirty.current || !catalog) return;
+
+      if (selRef.current && t - pulseTick > 70) {
+        pulseTick = t;
+        dirty.current = true;
+      }
+      if (!dirty.current) return;
       dirty.current = false;
       const ctx = canvasRef.current?.getContext('2d');
       if (!ctx) return;
-      drawSky(ctx, v, catalog, layersRef.current, selRef.current, t);
-      if (t - hudTick > 120) {
-        hudTick = t;
-        setHud((h) =>
-          h.ra === v.ra && h.dec === v.dec && h.fov === v.fov ? h : { ra: v.ra, dec: v.dec, fov: v.fov });
-      }
+      drawSky(ctx, v, layersRef.current, selRef.current, t);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [catalog]);
+  }, [ready]);
 
-  useEffect(() => { dirty.current = true; }, [layers, selected]);
+  useEffect(() => {
+    dirty.current = true;
+  }, [layers, selected]);
 
   const panPixels = useCallback((dx: number, dy: number) => {
     const v = viewRef.current;
@@ -130,47 +128,52 @@ export default function StarMap({ active }: { active: boolean }) {
     dirty.current = true;
   }, []);
 
-  const zoomAt = useCallback((factor: number, mx?: number, my?: number) => {
-    const v = viewRef.current;
-    const before = v.fov;
-    v.fov = clamp(v.fov * factor, 0.25, 175);
-    updateView(v);
-    if (mx != null && my != null && before !== v.fov) {
-      const f = 1 - before / v.fov;
-      panPixels((mx - v.cx) * f, (my - v.cy) * f);
-    }
-    anim.current = null;
-    dirty.current = true;
-  }, [panPixels]);
+  const zoomAt = useCallback(
+    (factor: number, mx?: number, my?: number) => {
+      const v = viewRef.current;
+      const before = v.fov;
+      v.fov = clamp(v.fov * factor, 0.4, 175);
+      updateView(v);
+      if (mx != null && my != null && before !== v.fov) {
+        const f = 1 - before / v.fov;
+        panPixels((mx - v.cx) * f, (my - v.cy) * f);
+      }
+      anim.current = null;
+      dirty.current = true;
+    },
+    [panPixels],
+  );
 
   const flyTo = useCallback((ra: number, dec: number, fov: number, dur = 900) => {
     const v = viewRef.current;
     anim.current = {
-      t0: performance.now(), dur,
-      from: [v.ra, v.dec, v.fov], to: [ra, dec, clamp(fov, 0.25, 175)],
+      t0: performance.now(),
+      dur,
+      from: [v.ra, v.dec, v.fov],
+      to: [ra, clamp(dec, -88, 88), clamp(fov, 0.4, 175)],
     };
   }, []);
 
-  // Ambient tour: while inactive, glide from one Messier object to the next.
+  /* ambient tour while inactive */
   useEffect(() => {
-    if (active || !catalog) return;
-    const pool = catalog.dsos
-      .map((d, i) => ({ d, i }))
-      .filter((x) => x.d.name && x.d.mag < 9.5);
-    if (pool.length === 0) return;
+    if (active) return;
+    const pool = CATALOG.dsos.map((d, i) => ({ d, i })).filter((x) => x.d.name && x.d.mag < 9.5);
     let idx = Math.floor(Math.random() * pool.length);
     const go = () => {
       const { d, i } = pool[idx];
-      flyTo(d.ra, d.dec, 9, 3200);
+      flyTo(d.ra, d.dec, clamp((d.size / 60) * 5, 14, 45), 3400);
       setSelected({ kind: 'dso', index: i });
-      idx = (idx + 1 + Math.floor(Math.random() * 6)) % pool.length;
+      idx = (idx + 1 + Math.floor(Math.random() * 5)) % pool.length;
     };
-    const t0 = window.setTimeout(go, 1400);
-    const t = window.setInterval(go, 15000);
-    return () => { window.clearTimeout(t0); window.clearInterval(t); };
-  }, [active, catalog, flyTo]);
+    const t0 = window.setTimeout(go, 1200);
+    const t = window.setInterval(go, 14000);
+    return () => {
+      window.clearTimeout(t0);
+      window.clearInterval(t);
+    };
+  }, [active, flyTo]);
 
-  // Entering / leaving explore mode: drop the tour selection, stop any flight.
+  /* switching modes resets the selection */
   useEffect(() => {
     anim.current = null;
     setSelected(null);
@@ -181,247 +184,202 @@ export default function StarMap({ active }: { active: boolean }) {
     }
   }, [active, flyTo]);
 
+  /* pointer interaction (explore mode only) */
   useEffect(() => {
     const cv = canvasRef.current;
-    if (!cv) return;
-    const pts = new Map<number, { x: number; y: number }>();
-    let moved = 0, downAt = 0, pinch = 0;
+    if (!cv || !active) return;
+    let dragging = false;
+    let moved = 0;
+    let lastX = 0;
+    let lastY = 0;
+    const pinch = new Map<number, { x: number; y: number }>();
+    let pinchDist = 0;
+
     const local = (e: PointerEvent) => {
       const r = cv.getBoundingClientRect();
       return { x: e.clientX - r.left, y: e.clientY - r.top };
     };
-    const onDown = (e: PointerEvent) => {
+
+    const down = (e: PointerEvent) => {
       cv.setPointerCapture(e.pointerId);
-      pts.set(e.pointerId, local(e));
-      if (pts.size === 1) { moved = 0; downAt = performance.now(); anim.current = null; }
-      if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); }
+      const p = local(e);
+      pinch.set(e.pointerId, p);
+      dragging = true;
+      moved = 0;
+      lastX = p.x;
+      lastY = p.y;
+      anim.current = null;
     };
-    const onMove = (e: PointerEvent) => {
-      const p = local(e), prev = pts.get(e.pointerId);
-      if (!prev) return;
-      pts.set(e.pointerId, p);
-      if (pts.size === 1) {
-        moved += Math.abs(p.x - prev.x) + Math.abs(p.y - prev.y);
-        panPixels(p.x - prev.x, p.y - prev.y);
-      } else if (pts.size === 2) {
-        const [a, b] = [...pts.values()];
+    const move = (e: PointerEvent) => {
+      const p = local(e);
+      if (pinch.has(e.pointerId)) pinch.set(e.pointerId, p);
+      if (pinch.size === 2) {
+        const [a, b] = [...pinch.values()];
         const d = Math.hypot(a.x - b.x, a.y - b.y);
-        if (pinch > 0 && d > 0) zoomAt(pinch / d, (a.x + b.x) / 2, (a.y + b.y) / 2);
-        pinch = d;
-        moved += 10;
+        if (pinchDist) zoomAt(pinchDist / d, (a.x + b.x) / 2, (a.y + b.y) / 2);
+        pinchDist = d;
+        return;
+      }
+      if (!dragging) return;
+      const dx = p.x - lastX;
+      const dy = p.y - lastY;
+      lastX = p.x;
+      lastY = p.y;
+      moved += Math.abs(dx) + Math.abs(dy);
+      panPixels(dx, dy);
+    };
+    const up = (e: PointerEvent) => {
+      pinch.delete(e.pointerId);
+      if (pinch.size < 2) pinchDist = 0;
+      if (!dragging) return;
+      dragging = false;
+      if (moved < 5) {
+        const p = local(e);
+        const hit = pick(viewRef.current, p.x, p.y, layersRef.current);
+        setSelected(hit);
       }
     };
-    const onUp = (e: PointerEvent) => {
-      const p = pts.get(e.pointerId);
-      pts.delete(e.pointerId);
-      if (pts.size < 2) pinch = 0;
-      if (p && moved < 6 && performance.now() - downAt < 700 && catalog)
-        setSelected(pick(viewRef.current, catalog, p.x, p.y, layersRef.current));
-    };
-    const onWheel = (e: WheelEvent) => {
+    const wheel = (e: WheelEvent) => {
       e.preventDefault();
       const r = cv.getBoundingClientRect();
-      zoomAt(Math.exp(clamp(e.deltaY, -120, 120) * 0.0016), e.clientX - r.left, e.clientY - r.top);
+      zoomAt(Math.exp(e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top);
     };
-    cv.addEventListener('pointerdown', onDown);
-    cv.addEventListener('pointermove', onMove);
-    cv.addEventListener('pointerup', onUp);
-    cv.addEventListener('pointercancel', onUp);
-    cv.addEventListener('wheel', onWheel, { passive: false });
+
+    cv.addEventListener('pointerdown', down);
+    cv.addEventListener('pointermove', move);
+    cv.addEventListener('pointerup', up);
+    cv.addEventListener('pointercancel', up);
+    cv.addEventListener('wheel', wheel, { passive: false });
     return () => {
-      cv.removeEventListener('pointerdown', onDown);
-      cv.removeEventListener('pointermove', onMove);
-      cv.removeEventListener('pointerup', onUp);
-      cv.removeEventListener('pointercancel', onUp);
-      cv.removeEventListener('wheel', onWheel);
+      cv.removeEventListener('pointerdown', down);
+      cv.removeEventListener('pointermove', move);
+      cv.removeEventListener('pointerup', up);
+      cv.removeEventListener('pointercancel', up);
+      cv.removeEventListener('wheel', wheel);
     };
-  }, [catalog, panPixels, zoomAt]);
+  }, [active, panPixels, zoomAt]);
 
-  const targets = useMemo<Target[]>(() => {
-    if (!catalog) return [];
-    const out: Target[] = [];
-    catalog.dsos.forEach((d, i) => out.push({
-      key: `d${i}`, label: d.name ? `${d.desig} — ${d.name}` : d.desig,
-      sub: DSO_TYPE[d.type] ?? 'Deep-sky object', ra: d.ra, dec: d.dec, fov: 3.2,
-      sel: { kind: 'dso', index: i },
-    }));
-    const s = catalog.stars;
-    for (const i of s.named.slice(0, 260)) out.push({
-      key: `s${i}`, label: s.name[i]!,
-      sub: `Star · ${s.desig[i] ?? `HIP ${s.hip[i]}`} · mag ${s.mag[i].toFixed(2)}`,
-      ra: s.ra[i], dec: s.dec[i], fov: 12, sel: { kind: 'star', index: i },
-    });
-    return out;
-  }, [catalog]);
-
-  const results = useMemo(() => {
+  const hits = useMemo<SearchHit[]>(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return [];
-    const compact = q.replace(/\s+/g, '');
-    return targets
-      .map((t) => {
-        const l = t.label.toLowerCase(), lc = l.replace(/\s+/g, '');
-        const s = lc.startsWith(compact) ? 0 : l.includes(q) ? 1 : lc.includes(compact) ? 2 : -1;
-        return { t, s };
-      })
-      .filter((r) => r.s >= 0)
-      .sort((a, b) => a.s - b.s || a.t.label.length - b.t.label.length)
-      .slice(0, 8)
-      .map((r) => r.t);
-  }, [targets, query]);
-
-  const goTo = useCallback((t: Target) => {
-    flyTo(t.ra, t.dec, t.fov);
-    setSelected(t.sel);
-    setQuery('');
-  }, [flyTo]);
-
-  const selInfo = useMemo(() => {
-    if (!catalog || !selected) return null;
-    if (selected.kind === 'dso') {
-      const d: Dso = catalog.dsos[selected.index];
-      const queries: string[] = [], tokens: string[] = [];
-      if (d.name) { queries.push(`${d.name} Hubble`, d.name); tokens.push(d.name); }
-      if (d.messier != null) {
-        queries.push(`Messier ${d.messier} Hubble`, `M${d.messier} ${DSO_TYPE[d.type] ?? ''}`);
-        tokens.push(`messier ${d.messier}`, `m${d.messier}`, `messier${d.messier}`);
+    if (q.length < 1) return [];
+    const out: SearchHit[] = [];
+    CATALOG.dsos.forEach((d, i) => {
+      const hay = `${d.desig} ${d.name ?? ''}`.toLowerCase();
+      if (hay.includes(q)) out.push({ label: d.name ?? d.desig, sub: `${d.desig} · ${d.con}`, sel: { kind: 'dso', index: i } });
+    });
+    CATALOG.stars.forEach((s, i) => {
+      if (s.name.toLowerCase().includes(q)) {
+        out.push({ label: s.name, sub: `star · ${s.con} · mag ${s.mag.toFixed(1)}`, sel: { kind: 'star', index: i } });
       }
-      queries.push(`${d.desig} Hubble`);
-      tokens.push(d.desig.toLowerCase());
-      return {
-        key: `dso:${d.desig}`, title: d.name ?? d.desig, badge: d.desig,
-        kind: DSO_TYPE[d.type] ?? 'Deep-sky object', accent: FAMILY_COLOR[dsoFamily(d.type)],
-        rows: [
-          ['Apparent magnitude', d.mag === 999 ? '—' : d.mag.toFixed(1)],
-          ['Apparent size', d.dim ? `${d.dim}′` : '—'],
-          ['Catalogue', d.messier != null ? `Messier ${d.messier}` : d.desig],
-        ] as [string, string][],
-        queries, tokens,
-      };
-    }
-    const s = catalog.stars, i = selected.index, name = s.name[i];
-    const t = bv2temp(-0.4 + (s.ci[i] / 47) * 2.4);
-    return {
-      key: `star:${s.hip[i]}`, title: name ?? s.desig[i] ?? `HIP ${s.hip[i]}`,
-      badge: s.desig[i] ?? `HIP ${s.hip[i]}`, kind: 'Star', accent: '#cfe0ff',
-      rows: [
-        ['Apparent magnitude', s.mag[i].toFixed(2)],
-        ['Colour temperature', `≈ ${Math.round(t / 50) * 50} K`],
-        ['Hipparcos ID', `HIP ${s.hip[i]}`],
-      ] as [string, string][],
-      queries: name ? [`${name} star Hubble`, `${name} star`] : [`HIP ${s.hip[i]}`],
-      tokens: name ? [name] : [`hip ${s.hip[i]}`],
-    };
-  }, [catalog, selected]);
+    });
+    return out.slice(0, 8);
+  }, [query]);
 
-  const zoomLabel = hud.fov >= 1 ? `${hud.fov.toFixed(hud.fov < 10 ? 1 : 0)}°` : `${(hud.fov * 60).toFixed(0)}′`;
+  const goTo = useCallback(
+    (sel: Selection) => {
+      const i = buildInfo(sel);
+      setSelected(sel);
+      flyTo(i.ra, i.dec, i.fov, 1100);
+    },
+    [flyTo],
+  );
 
   return (
-    <div ref={wrapRef} className="relative h-full w-full overflow-hidden bg-[#03040a] select-none">
+    <div ref={wrapRef} className="relative h-full w-full bg-[#03040a]">
       <canvas
         ref={canvasRef}
-        className={`absolute inset-0 block touch-none ${active ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'}`}
+        className={`block h-full w-full ${active ? 'cursor-grab active:cursor-grabbing' : ''}`}
       />
 
-      {!catalog && (
-        <div className="pointer-events-none absolute inset-0 grid place-items-center">
-          <div className="text-center">
-            <div className="mb-3 font-mono text-[11px] tracking-[0.25em] text-sky-200/70">
-              {error ? 'CATALOGUE ERROR' : 'LOADING CATALOGUES'}
-            </div>
-            <div className="mx-auto h-px w-56 overflow-hidden bg-white/10">
-              <div className="h-full bg-sky-300/80 transition-[width] duration-300"
-                style={{ width: `${Math.round(progress * 100)}%` }} />
-            </div>
-            <div className="mt-3 font-mono text-[10px] text-white/35">
-              {error ?? 'Hipparcos · Messier · Milky Way isophotes'}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Ambient caption while the map runs the idle tour */}
+      {/* ambient caption while idle */}
       <AnimatePresence mode="wait">
-        {!active && selInfo && <TourCard key={selInfo.key} info={selInfo} />}
+        {!active && info && <TourCard key={info.key} info={info} />}
       </AnimatePresence>
 
-      {active && catalog && (
-        <>
-          <div className="pointer-events-none absolute top-0 left-0 z-20 flex w-full items-start justify-between gap-3 p-3 sm:p-4">
-            <div className="pointer-events-auto w-[58%] max-w-sm min-w-[9rem]">
-              <div className="relative">
-                <input
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && results[0]) goTo(results[0]);
-                    if (e.key === 'Escape') setQuery('');
-                  }}
-                  placeholder="Search…"
-                  className="w-full rounded-md border border-[#cdd4d76e] bg-zinc-950/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 outline-none backdrop-blur-md transition focus:border-[#cdd4d7] focus:ring-1 focus:ring-white/20"
-                />
-                {results.length > 0 && (
-                  <ul className="absolute top-full left-0 z-30 mt-1.5 w-full overflow-hidden rounded-lg border border-white/12 bg-black/85 backdrop-blur-xl">
-                    {results.map((t) => (
-                      <li key={t.key}>
-                        <button onClick={() => goTo(t)} className="block w-full px-3 py-2 text-left hover:bg-white/10">
-                          <div className="text-[13px] text-white/90">{t.label}</div>
-                          <div className="font-mono text-[10px] text-white/40">{t.sub}</div>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+      {/* explorer chrome */}
+      <AnimatePresence>
+        {active && (
+          <motion.div
+            key="chrome"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="pointer-events-none absolute inset-0 z-20"
+          >
+            {/* search */}
+            <div className="pointer-events-auto absolute top-3 left-3 w-64 max-w-[calc(100vw-24px)]">
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search..."
+                className="w-full rounded-lg border border-white/12 bg-black/60 px-3 py-2 font-mono text-xs text-white placeholder:text-white/30 backdrop-blur-md outline-none focus:border-sky-300/40"
+              />
+              {hits.length > 0 && (
+                <ul className="mt-1 overflow-hidden rounded-lg border border-white/10 bg-black/80 backdrop-blur-md">
+                  {hits.map((h) => (
+                    <li key={`${h.sel.kind}-${h.sel.index}`}>
+                      <button
+                        onClick={() => {
+                          goTo(h.sel);
+                          setQuery('');
+                        }}
+                        className="block w-full px-3 py-1.5 text-left hover:bg-white/10"
+                      >
+                        <div className="text-[12px] text-white/90">{h.label}</div>
+                        <div className="font-mono text-[10px] text-white/40">{h.sub}</div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
 
-            <div className="pointer-events-auto flex flex-1 flex-wrap justify-end gap-1.5 pr-24 sm:pr-28">
-              {LAYER_LABELS.map((l) => (
+            {/* layers */}
+            <div className="pointer-events-auto absolute bottom-3 left-3 flex flex-wrap gap-1.5">
+              {LAYER_LABELS.map(({ key, label }) => (
                 <button
-                  key={l.key}
-                  onClick={() => setLayers((s) => ({ ...s, [l.key]: !s[l.key] }))}
-                  className={`rounded-sm border px-2.5 py-1 font-mono text-[10px] tracking-wider transition-all duration-150 ${
-                    layers[l.key]
-                      ? 'border-[#cdd4d7] bg-[#010101c2] text-[#cdd4d7] shadow-sm hover:bg-[rgba(48,25,52,0.8)]'
-                      : 'border-[#cdd4d76e] text-[#cdd4d76e] hover:text-[#cdd4d7]'
+                  key={key}
+                  onClick={() => setLayers((l) => ({ ...l, [key]: !l[key] }))}
+                  className={`rounded-md border px-2 py-1 font-mono text-[10px] backdrop-blur-md transition ${
+                    layers[key]
+                      ? 'border-sky-300/40 bg-sky-300/15 text-sky-100'
+                      : 'border-white/10 bg-black/50 text-white/40 hover:text-white/70'
                   }`}
                 >
-                  {l.label}
+                  {label}
                 </button>
               ))}
+              <button
+                onClick={() => flyTo(HOME.ra, HOME.dec, HOME.fov, 900)}
+                className="rounded-md border border-white/10 bg-black/50 px-2 py-1 font-mono text-[10px] text-white/60 backdrop-blur-md hover:text-white"
+              >
+                reset view
+              </button>
             </div>
-          </div>
 
-          <div className="pointer-events-none absolute bottom-3 left-3 z-20 font-mono text-[10px] leading-relaxed text-white/45 sm:bottom-4 sm:left-4">
-            <div className="text-white/30">FIELD {zoomLabel} · drag to pan · scroll to zoom · click an object</div>
-          </div>
-
-          <div className="absolute right-3 bottom-3 z-20 flex flex-col gap-1.5 sm:right-4 sm:bottom-4">
-            <button onClick={() => zoomAt(0.66)} className="h-8 w-8 rounded border border-white/12 bg-black/50 text-white/70 backdrop-blur-md hover:text-white">+</button>
-            <button onClick={() => zoomAt(1.5)} className="h-8 w-8 rounded border border-white/12 bg-black/50 text-white/70 backdrop-blur-md hover:text-white">−</button>
-            <button
-              onClick={() => { flyTo(HOME.ra, HOME.dec, HOME.fov); setSelected(null); }}
-              className="h-8 w-8 rounded border border-white/12 bg-black/50 font-mono text-[10px] text-white/70 backdrop-blur-md hover:text-white"
-            >⤢</button>
-          </div>
-        </>
-      )}
+            {/* zoom */}
+            <div className="pointer-events-auto absolute right-3 bottom-3 flex items-center gap-2">
+              <div className="flex overflow-hidden rounded-md border border-white/10 bg-black/50 backdrop-blur-md">
+                <button onClick={() => zoomAt(0.66)} className="px-2.5 py-1 text-white/70 hover:bg-white/10 hover:text-white">
+                  +
+                </button>
+                <button onClick={() => zoomAt(1.5)} className="px-2.5 py-1 text-white/70 hover:bg-white/10 hover:text-white">
+                  −
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
-        {active && selInfo && (
+        {active && info && (
           <InfoPanel
-            key="info"
-            info={selInfo}
+            key={info.key}
+            info={info}
             onClose={() => setSelected(null)}
-            onCenter={() => {
-              const v = viewRef.current;
-              if (selected?.kind === 'dso' && catalog) {
-                const d = catalog.dsos[selected.index];
-                flyTo(d.ra, d.dec, Math.min(v.fov, 2.5));
-              } else if (selected?.kind === 'star' && catalog) {
-                flyTo(catalog.stars.ra[selected.index], catalog.stars.dec[selected.index], Math.min(v.fov, 10));
-              }
-            }}
+            onCenter={() => flyTo(info.ra, info.dec, info.fov, 900)}
           />
         )}
       </AnimatePresence>

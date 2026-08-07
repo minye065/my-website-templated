@@ -11,7 +11,6 @@
   "dependencies": {
     "animejs": "^4.5.0",
     "clsx": "2.1.1",
-    "d3-celestial": "^0.7.35",
     "motion": "^13.0.0",
     "react": "19.2.6",
     "react-dom": "19.2.6",

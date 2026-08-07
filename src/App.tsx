@@ -43,6 +43,21 @@ export default function App() {
       </AnimatePresence>
 
       <AnimatePresence>
+        {!explore && (
+          <motion.div
+            key="hint"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ delay: 0.8, duration: 0.6 }}
+            className="pointer-events-none absolute right-4 bottom-4 z-20 font-mono text-[10px] tracking-widest text-white/35 uppercase"
+          >
+            click the sky to explore
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {explore && (
           <motion.button
             key="back"
@@ -51,9 +66,9 @@ export default function App() {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25 }}
             onClick={() => setExplore(false)}
-            className="absolute top-3 right-3 z-40 rounded-md border border-white/15 bg-black/60 px-3 py-2 font-mono text-[10.5px] tracking-wider text-white/75 backdrop-blur-md hover:text-white sm:top-4 sm:right-4"
+            className="absolute top-3 left-1/2 z-40 -translate-x-1/2 rounded-md border border-white/15 bg-black/60 px-3 py-2 font-mono text-xs text-white/80 backdrop-blur-md hover:bg-black/80 hover:text-white"
           >
-            ✕ BACK · ESC
+            ← Exit explorer
           </motion.button>
         )}
       </AnimatePresence>
