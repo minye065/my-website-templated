@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { motion } from 'motion/react';
 import { findPhoto, type NasaPhoto } from '../library/nasa';
 
 export interface ObjectInfo {
@@ -30,10 +31,16 @@ export default function InfoPanel({ info, onClose, onCenter }: {
       .then((p) => { if (alive) { setPhoto(p); setLoading(false); } })
       .catch(() => alive && setLoading(false));
     return () => { alive = false; };
-  }, [info.key]);
+  }, [info.key, info.queries, info.tokens]);
 
   return (
-    <aside className="pointer-events-auto absolute right-0 bottom-0 z-30 max-h-[72%] w-full overflow-y-auto border-t border-white/10 bg-black/80 backdrop-blur-xl sm:top-20 sm:right-4 sm:bottom-auto sm:max-h-[calc(100%-7rem)] sm:w-[340px] sm:rounded-xl sm:border">
+    <motion.aside
+      initial={{ opacity: 0, x: 24 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 24 }}
+      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+      className="pointer-events-auto absolute right-0 bottom-0 z-30 max-h-[72%] w-full overflow-y-auto border-t border-white/10 bg-black/80 backdrop-blur-xl sm:top-20 sm:right-4 sm:bottom-auto sm:max-h-[calc(100%-7rem)] sm:w-[340px] sm:rounded-xl sm:border"
+    >
       <div className="relative">
         <div className="aspect-[4/3] w-full overflow-hidden bg-[#080b16] sm:rounded-t-xl">
           {photo ? (
@@ -116,6 +123,6 @@ export default function InfoPanel({ info, onClose, onCenter }: {
           className="w-full rounded-md border border-white/12 bg-white/5 py-1.5 font-mono text-[10.5px] tracking-wide text-white/70 hover:bg-white/10 hover:text-white"
         >CENTRE &amp; ZOOM</button>
       </div>
-    </aside>
+    </motion.aside>
   );
 }

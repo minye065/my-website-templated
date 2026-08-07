@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence } from 'motion/react';
 import {
   loadCatalog, type Catalog, type Dso, DSO_TYPE, dsoFamily, FAMILY_COLOR,
 } from '../library/catalog';
 import { drawSky, loadNasaBackground, pick, type Layers, type Selection } from '../library/render';
 import { clamp, makeView, updateView, wrapLon, bv2temp } from '../library/sky';
 import InfoPanel from './InfoPanel';
+import TourCard from './TourCard';
 
 interface Target {
   key: string;
@@ -24,12 +26,14 @@ const LAYER_LABELS: { key: keyof Layers; label: string }[] = [
 
 const HOME = { ra: 84, dec: -3, fov: 95 };
 
-export default function StarMap() {
+export default function StarMap({ active }: { active: boolean }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewRef = useRef(makeView());
   const dirty = useRef(true);
-  const anim = useRef<{ t0: number; from: [number, number, number]; to: [number, number, number] } | null>(null);
+  const anim = useRef<{
+    t0: number; dur: number; from: [number, number, number]; to: [number, number, number];
+  } | null>(null);
 
   const [catalog, setCatalog] = useState<Catalog | null>(null);
   const [progress, setProgress] = useState(0);
@@ -38,13 +42,15 @@ export default function StarMap() {
   const [hud, setHud] = useState(HOME);
   const [query, setQuery] = useState('');
   const [layers, setLayers] = useState<Layers>({
-    background: true, milkyway: false, constellations: false, grid: false, labels: true, deepSky: true,
+    background: true, milkyway: false, labels: true, deepSky: true,
   });
 
   const selRef = useRef<Selection | null>(null);
   selRef.current = selected;
   const layersRef = useRef(layers);
   layersRef.current = layers;
+  const activeRef = useRef(active);
+  activeRef.current = active;
 
   useEffect(() => {
     let alive = true;
@@ -76,13 +82,15 @@ export default function StarMap() {
   }, []);
 
   useEffect(() => {
-    let raf = 0, hudTick = 0, pulseTick = 0;
+    let raf = 0, hudTick = 0, pulseTick = 0, last = 0;
     const loop = (t: number) => {
       raf = requestAnimationFrame(loop);
+      const dt = last ? Math.min(t - last, 100) : 16;
+      last = t;
       const v = viewRef.current;
       if (anim.current) {
         const a = anim.current;
-        const k = clamp((t - a.t0) / 900, 0, 1);
+        const k = clamp((t - a.t0) / a.dur, 0, 1);
         const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
         v.ra = wrapLon(a.from[0] + wrapLon(a.to[0] - a.from[0]) * e);
         v.dec = a.from[1] + (a.to[1] - a.from[1]) * e;
@@ -90,6 +98,11 @@ export default function StarMap() {
         updateView(v);
         dirty.current = true;
         if (k >= 1) anim.current = null;
+      } else if (!activeRef.current) {
+        // Idle mode: the sky drifts on its own, slowly.
+        v.ra = wrapLon(v.ra + dt * 0.00007 * v.fov);
+        updateView(v);
+        dirty.current = true;
       }
       if (selRef.current && t - pulseTick > 70) { pulseTick = t; dirty.current = true; }
       if (!dirty.current || !catalog) return;
@@ -130,10 +143,43 @@ export default function StarMap() {
     dirty.current = true;
   }, [panPixels]);
 
-  const flyTo = useCallback((ra: number, dec: number, fov: number) => {
+  const flyTo = useCallback((ra: number, dec: number, fov: number, dur = 900) => {
     const v = viewRef.current;
-    anim.current = { t0: performance.now(), from: [v.ra, v.dec, v.fov], to: [ra, dec, clamp(fov, 0.25, 175)] };
+    anim.current = {
+      t0: performance.now(), dur,
+      from: [v.ra, v.dec, v.fov], to: [ra, dec, clamp(fov, 0.25, 175)],
+    };
   }, []);
+
+  // Ambient tour: while inactive, glide from one Messier object to the next.
+  useEffect(() => {
+    if (active || !catalog) return;
+    const pool = catalog.dsos
+      .map((d, i) => ({ d, i }))
+      .filter((x) => x.d.name && x.d.mag < 9.5);
+    if (pool.length === 0) return;
+    let idx = Math.floor(Math.random() * pool.length);
+    const go = () => {
+      const { d, i } = pool[idx];
+      flyTo(d.ra, d.dec, 9, 3200);
+      setSelected({ kind: 'dso', index: i });
+      idx = (idx + 1 + Math.floor(Math.random() * 6)) % pool.length;
+    };
+    const t0 = window.setTimeout(go, 1400);
+    const t = window.setInterval(go, 15000);
+    return () => { window.clearTimeout(t0); window.clearInterval(t); };
+  }, [active, catalog, flyTo]);
+
+  // Entering / leaving explore mode: drop the tour selection, stop any flight.
+  useEffect(() => {
+    anim.current = null;
+    setSelected(null);
+    setQuery('');
+    if (active) {
+      const v = viewRef.current;
+      flyTo(v.ra, v.dec, Math.max(v.fov, 60), 700);
+    }
+  }, [active, flyTo]);
 
   useEffect(() => {
     const cv = canvasRef.current;
@@ -272,7 +318,10 @@ export default function StarMap() {
 
   return (
     <div ref={wrapRef} className="relative h-full w-full overflow-hidden bg-[#03040a] select-none">
-      <canvas ref={canvasRef} className="absolute inset-0 block cursor-grab touch-none active:cursor-grabbing" />
+      <canvas
+        ref={canvasRef}
+        className={`absolute inset-0 block touch-none ${active ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'}`}
+      />
 
       {!catalog && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
@@ -285,85 +334,97 @@ export default function StarMap() {
                 style={{ width: `${Math.round(progress * 100)}%` }} />
             </div>
             <div className="mt-3 font-mono text-[10px] text-white/35">
-              {error ?? 'Hipparcos · Messier · IAU figures · Milky Way isophotes'}
+              {error ?? 'Hipparcos · Messier · Milky Way isophotes'}
             </div>
           </div>
         </div>
       )}
 
-      <div className="pointer-events-none absolute top-0 left-0 z-20 flex w-full items-start justify-between gap-3 p-3 sm:p-4">
-        <div className="pointer-events-auto w-[58%] max-w-sm min-w-[9rem]">
-          <div className="relative">
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && results[0]) goTo(results[0]);
-                if (e.key === 'Escape') setQuery('');
-              }}
-              placeholder="Search…"
-              className="w-full rounded-md border border-[cdd4d76e] bg-zinc-950/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 outline-none backdrop-blur-md transition focus:border-[cdd4d7] focus:ring-1 focus:ring-white/20"
-            />
-            {results.length > 0 && (
-              <ul className="absolute top-full left-0 z-30 mt-1.5 w-full overflow-hidden rounded-lg border border-white/12 bg-black/85 backdrop-blur-xl">
-                {results.map((t) => (
-                  <li key={t.key}>
-                    <button onClick={() => goTo(t)} className="block w-full px-3 py-2 text-left hover:bg-white/10">
-                      <div className="text-[13px] text-white/90">{t.label}</div>
-                      <div className="font-mono text-[10px] text-white/40">{t.sub}</div>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+      {/* Ambient caption while the map runs the idle tour */}
+      <AnimatePresence mode="wait">
+        {!active && selInfo && <TourCard key={selInfo.key} info={selInfo} />}
+      </AnimatePresence>
+
+      {active && catalog && (
+        <>
+          <div className="pointer-events-none absolute top-0 left-0 z-20 flex w-full items-start justify-between gap-3 p-3 sm:p-4">
+            <div className="pointer-events-auto w-[58%] max-w-sm min-w-[9rem]">
+              <div className="relative">
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && results[0]) goTo(results[0]);
+                    if (e.key === 'Escape') setQuery('');
+                  }}
+                  placeholder="Search…"
+                  className="w-full rounded-md border border-[#cdd4d76e] bg-zinc-950/80 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-500 outline-none backdrop-blur-md transition focus:border-[#cdd4d7] focus:ring-1 focus:ring-white/20"
+                />
+                {results.length > 0 && (
+                  <ul className="absolute top-full left-0 z-30 mt-1.5 w-full overflow-hidden rounded-lg border border-white/12 bg-black/85 backdrop-blur-xl">
+                    {results.map((t) => (
+                      <li key={t.key}>
+                        <button onClick={() => goTo(t)} className="block w-full px-3 py-2 text-left hover:bg-white/10">
+                          <div className="text-[13px] text-white/90">{t.label}</div>
+                          <div className="font-mono text-[10px] text-white/40">{t.sub}</div>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+
+            <div className="pointer-events-auto flex flex-1 flex-wrap justify-end gap-1.5 pr-24 sm:pr-28">
+              {LAYER_LABELS.map((l) => (
+                <button
+                  key={l.key}
+                  onClick={() => setLayers((s) => ({ ...s, [l.key]: !s[l.key] }))}
+                  className={`rounded-sm border px-2.5 py-1 font-mono text-[10px] tracking-wider transition-all duration-150 ${
+                    layers[l.key]
+                      ? 'border-[#cdd4d7] bg-[#010101c2] text-[#cdd4d7] shadow-sm hover:bg-[rgba(48,25,52,0.8)]'
+                      : 'border-[#cdd4d76e] text-[#cdd4d76e] hover:text-[#cdd4d7]'
+                  }`}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div className="pointer-events-auto flex flex-1 flex-wrap justify-end gap-1.5">
-          {LAYER_LABELS.map((l) => (
+          <div className="pointer-events-none absolute bottom-3 left-3 z-20 font-mono text-[10px] leading-relaxed text-white/45 sm:bottom-4 sm:left-4">
+            <div className="text-white/30">FIELD {zoomLabel} · drag to pan · scroll to zoom · click an object</div>
+          </div>
+
+          <div className="absolute right-3 bottom-3 z-20 flex flex-col gap-1.5 sm:right-4 sm:bottom-4">
+            <button onClick={() => zoomAt(0.66)} className="h-8 w-8 rounded border border-white/12 bg-black/50 text-white/70 backdrop-blur-md hover:text-white">+</button>
+            <button onClick={() => zoomAt(1.5)} className="h-8 w-8 rounded border border-white/12 bg-black/50 text-white/70 backdrop-blur-md hover:text-white">−</button>
             <button
-              key={l.key}
-              onClick={() => setLayers((s) => ({ ...s, [l.key]: !s[l.key] }))}
-              className={`rounded-sm border px-2.5 py-1 font-mono text-[10px] tracking-wider transition-all duration-150 ${
-                layers[l.key]
-                  ? 'border-[#cdd4d7] bg-[#010101c2] text-[#cdd4d7] shadow-sm hover:bg-[rgba(48,25,52,0.8)] hover:text-[#cdd4d7]'
-                  : 'border-[#cdd4d76e] hover:text-[#cdd4d76e] hover:border-white-600/40 hover:text-[#cdd4d7]'
-              }`}
-            >
-              {l.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="pointer-events-none absolute bottom-3 left-3 z-20 font-mono text-[10px] leading-relaxed text-white/45 sm:bottom-4 sm:left-4">
-        <div className="text-white/30">FIELD {zoomLabel} · drag to pan · scroll to zoom</div>
-      </div>
-
-      <div className="absolute right-3 bottom-3 z-20 flex flex-col gap-1.5 sm:right-4 sm:bottom-4">
-        <button onClick={() => zoomAt(0.66)} className="h-8 w-8 rounded border border-white/12 bg-black/50 text-white/70 backdrop-blur-md hover:text-white">+</button>
-        <button onClick={() => zoomAt(1.5)} className="h-8 w-8 rounded border border-white/12 bg-black/50 text-white/70 backdrop-blur-md hover:text-white">−</button>
-        <button
-          onClick={() => { flyTo(HOME.ra, HOME.dec, HOME.fov); setSelected(null); }}
-          className="h-8 w-8 rounded border border-white/12 bg-black/50 font-mono text-[10px] text-white/70 backdrop-blur-md hover:text-white"
-        >⤢</button>
-      </div>
-
-      {selInfo && (
-        <InfoPanel
-          info={selInfo}
-          onClose={() => setSelected(null)}
-          onCenter={() => {
-            const v = viewRef.current;
-            if (selected?.kind === 'dso' && catalog) {
-              const d = catalog.dsos[selected.index];
-              flyTo(d.ra, d.dec, Math.min(v.fov, 2.5));
-            } else if (selected?.kind === 'star' && catalog) {
-              flyTo(catalog.stars.ra[selected.index], catalog.stars.dec[selected.index], Math.min(v.fov, 10));
-            }
-          }}
-        />
+              onClick={() => { flyTo(HOME.ra, HOME.dec, HOME.fov); setSelected(null); }}
+              className="h-8 w-8 rounded border border-white/12 bg-black/50 font-mono text-[10px] text-white/70 backdrop-blur-md hover:text-white"
+            >⤢</button>
+          </div>
+        </>
       )}
+
+      <AnimatePresence>
+        {active && selInfo && (
+          <InfoPanel
+            key="info"
+            info={selInfo}
+            onClose={() => setSelected(null)}
+            onCenter={() => {
+              const v = viewRef.current;
+              if (selected?.kind === 'dso' && catalog) {
+                const d = catalog.dsos[selected.index];
+                flyTo(d.ra, d.dec, Math.min(v.fov, 2.5));
+              } else if (selected?.kind === 'star' && catalog) {
+                flyTo(catalog.stars.ra[selected.index], catalog.stars.dec[selected.index], Math.min(v.fov, 10));
+              }
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

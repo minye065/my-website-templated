@@ -1,7 +1,5 @@
 import starsUrl from 'd3-celestial/data/stars.6.json?url';
 import starNamesUrl from 'd3-celestial/data/starnames.json?url';
-import conLinesUrl from 'd3-celestial/data/constellations.lines.json?url';
-import conUrl from 'd3-celestial/data/constellations.json?url';
 import messierUrl from 'd3-celestial/data/messier.json?url';
 import dsoNamesUrl from 'd3-celestial/data/dsonames.json?url';
 import mwUrl from 'd3-celestial/data/mw.json?url';
@@ -29,19 +27,6 @@ export interface Dso {
   messier: number | null;
 }
 
-export interface ConLine {
-  id: string;
-  segs: Float32Array[];
-}
-
-export interface Constellation {
-  id: string;
-  name: string;
-  ra: number;
-  dec: number;
-  rank: number;
-}
-
 export interface MwLevel {
   level: number;
   rings: Float32Array[];
@@ -50,8 +35,6 @@ export interface MwLevel {
 export interface Catalog {
   stars: Stars;
   dsos: Dso[];
-  conLines: ConLine[];
-  constellations: Constellation[];
   mw: MwLevel[];
 }
 
@@ -92,11 +75,10 @@ const norm = (s: string) => s.replace(/\s+/g, '').toUpperCase();
 
 export async function loadCatalog(onProgress?: (p: number) => void): Promise<Catalog> {
   let done = 0;
-  const tick = <T,>(p: Promise<T>) => p.then((v) => (onProgress?.(++done / 7), v));
+  const tick = <T,>(p: Promise<T>) => p.then((v) => (onProgress?.(++done / 5), v));
 
-  const [starsRaw, starNames, linesRaw, conRaw, messierRaw, dsoNames, mwRaw] = await Promise.all([
+  const [starsRaw, starNames, messierRaw, dsoNames, mwRaw] = await Promise.all([
     tick(getJSON<any>(starsUrl)), tick(getJSON<any>(starNamesUrl)),
-    tick(getJSON<any>(conLinesUrl)), tick(getJSON<any>(conUrl)),
     tick(getJSON<any>(messierUrl)), tick(getJSON<any>(dsoNamesUrl)), tick(getJSON<any>(mwUrl)),
   ]);
 
@@ -147,18 +129,6 @@ export async function loadCatalog(onProgress?: (p: number) => void): Promise<Cat
   });
   dsos.sort((a, b) => (a.messier ?? 999) - (b.messier ?? 999));
 
-  const conLines: ConLine[] = (linesRaw.features as any[]).map((f) => ({
-    id: String(f.id),
-    segs: (f.geometry.coordinates as number[][][]).map(ringToRaDec),
-  }));
-  const constellations: Constellation[] = (conRaw.features as any[]).map((f) => ({
-    id: String(f.id),
-    name: String(f.properties.name ?? f.properties.en ?? f.id),
-    ra: f.geometry.coordinates[0],
-    dec: f.geometry.coordinates[1],
-    rank: Number(f.properties.rank ?? 3),
-  }));
-
   const mw: MwLevel[] = (mwRaw.features as any[]).map((f, idx) => {
     const rings: Float32Array[] = [];
     const g = f.geometry;
@@ -168,7 +138,7 @@ export async function loadCatalog(onProgress?: (p: number) => void): Promise<Cat
     return { level: m ? parseInt(m[1], 10) : idx + 1, rings };
   }).sort((a, b) => a.level - b.level);
 
-  return { stars, dsos, conLines, constellations, mw };
+  return { stars, dsos, mw };
 }
 
 function clamp(v: number, lo: number, hi: number) {

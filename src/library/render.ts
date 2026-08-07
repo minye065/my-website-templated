@@ -1,14 +1,12 @@
 import type { Catalog, Dso } from './catalog';
 import { dsoFamily, FAMILY_COLOR } from './catalog';
-import { DEG, OUT, projectRaDec, STAR_COLORS, View, clamp, wrapLon } from './sky';
+import { OUT, projectRaDec, STAR_COLORS, View, clamp, wrapLon } from './sky';
 
 const TAU = 6.283185307179586;
 
 export interface Layers {
   background: boolean;
   milkyway: boolean;
-  constellations: boolean;
-  grid: boolean;
   labels: boolean;
   deepSky: boolean;
 }
@@ -54,17 +52,6 @@ function drawNasaBackground(ctx: CanvasRenderingContext2D, v: View) {
   for (; x < v.w; x += skyW) ctx.drawImage(bgImage, x, topY, skyW, skyH);
 }
 
-function strokePoints(ctx: CanvasRenderingContext2D, v: View, ra: number[], dec: number[]) {
-  let pen = false, prevRa = 0;
-  for (let i = 0; i < ra.length; i++) {
-    if (projectRaDec(v, ra[i], dec[i])) {
-      if (pen && Math.abs(ra[i] - prevRa) < 180) ctx.lineTo(OUT.x, OUT.y);
-      else { ctx.moveTo(OUT.x, OUT.y); pen = true; }
-      prevRa = ra[i];
-    } else pen = false;
-  }
-}
-
 function strokeRing(ctx: CanvasRenderingContext2D, v: View, ring: Float32Array, close: boolean) {
   const n = ring.length / 2;
   let pen = false, prevRa = 0;
@@ -86,72 +73,6 @@ function drawMilkyWay(ctx: CanvasRenderingContext2D, v: View, cat: Catalog) {
     ctx.beginPath();
     for (const ring of lvl.rings) if (ring.length >= 6) strokeRing(ctx, v, ring, true);
     ctx.fill();
-  }
-  ctx.restore();
-}
-
-function drawGrid(ctx: CanvasRenderingContext2D, v: View) {
-  const raStep = v.fov > 90 ? 30 : v.fov > 30 ? 15 : v.fov > 10 ? 5 : 1;
-  const decStep = v.fov > 90 ? 30 : v.fov > 30 ? 10 : v.fov > 10 ? 5 : 1;
-  ctx.save();
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = 'rgba(120,150,210,0.16)';
-  ctx.beginPath();
-  for (let ra = -180; ra < 180; ra += raStep) {
-    const d: number[] = [], r: number[] = [];
-    for (let x = -88; x <= 88; x += 2) { d.push(x); r.push(ra); }
-    strokePoints(ctx, v, r, d);
-  }
-  for (let dec = -75; dec <= 75; dec += decStep) {
-    const d: number[] = [], r: number[] = [];
-    for (let x = -180; x <= 180; x += 2) { r.push(x); d.push(dec); }
-    strokePoints(ctx, v, r, d);
-  }
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.strokeStyle = 'rgba(120,170,255,0.35)';
-  { const d: number[] = [], r: number[] = []; for (let x = -180; x <= 180; x++) { r.push(x); d.push(0); } strokePoints(ctx, v, r, d); }
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.strokeStyle = 'rgba(255,206,120,0.32)';
-  ctx.setLineDash([5, 5]);
-  const e = 23.4393 * DEG, r: number[] = [], d: number[] = [];
-  for (let l = 0; l <= 360; l++) {
-    const lam = l * DEG;
-    r.push(Math.atan2(Math.cos(e) * Math.sin(lam), Math.cos(lam)) / DEG);
-    d.push(Math.asin(Math.sin(e) * Math.sin(lam)) / DEG);
-  }
-  strokePoints(ctx, v, r, d);
-  ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.restore();
-}
-
-function drawConstellations(ctx: CanvasRenderingContext2D, v: View, cat: Catalog) {
-  ctx.save();
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = 'rgba(126,178,255,0.35)';
-  ctx.beginPath();
-  for (const c of cat.conLines) for (const seg of c.segs) strokeRing(ctx, v, seg, false);
-  ctx.stroke();
-  ctx.restore();
-}
-
-function drawConNames(ctx: CanvasRenderingContext2D, v: View, cat: Catalog, boxes: Box[]) {
-  ctx.save();
-  ctx.font = '500 11px ui-sans-serif, system-ui, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = 'rgba(150,190,255,0.55)';
-  const maxRank = v.fov > 120 ? 2 : 3;
-  for (const c of cat.constellations) {
-    if (c.rank > maxRank || !projectRaDec(v, c.ra, c.dec)) continue;
-    const label = c.name.toUpperCase();
-    const w = ctx.measureText(label).width;
-    if (fits(boxes, { x0: OUT.x - w / 2 - 4, y0: OUT.y - 8, x1: OUT.x + w / 2 + 4, y1: OUT.y + 8 }))
-      ctx.fillText(label, OUT.x, OUT.y);
   }
   ctx.restore();
 }
@@ -309,11 +230,8 @@ export function drawSky(
 
   if (layers.background) drawNasaBackground(ctx, v);
   if (layers.milkyway) drawMilkyWay(ctx, v, cat);
-  if (layers.grid) drawGrid(ctx, v);
-  if (layers.constellations) drawConstellations(ctx, v, cat);
 
   const boxes: Box[] = [];
-  if (layers.constellations && layers.labels) drawConNames(ctx, v, cat, boxes);
   drawStars(ctx, v, cat, layers.labels, boxes);
   if (layers.deepSky) drawDsos(ctx, v, cat, layers.labels, boxes);
 
