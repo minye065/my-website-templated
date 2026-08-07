@@ -58,18 +58,6 @@ export default function Profile() {
       </section>
 
       <section data-reveal className="mt-7 opacity-0">
-        <h2 className="font-mono text-[10px] tracking-[0.25em] text-white/35">NOW</h2>
-        <ul className="mt-3 space-y-1.5">
-          {NOW.map((n) => (
-            <li key={n} className="flex gap-2.5 text-[12.5px] leading-relaxed text-white/55">
-              <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-sky-300/60" />
-              {n}
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section data-reveal className="mt-7 opacity-0">
         <h2 className="font-mono text-[10px] tracking-[0.25em] text-white/35">CONTACT</h2>
         <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 font-mono text-[11.5px]">
           {CONTACTS.map((c) => (

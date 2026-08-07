@@ -41,22 +41,6 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      <AnimatePresence>
-        {!explore && (
-          <motion.div
-            key="hint"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ delay: 0.8, duration: 0.6 }}
-            className="pointer-events-none absolute right-4 bottom-4 z-20 font-mono text-[10px] tracking-widest text-white/35 uppercase"
-          >
-            click the sky to explore
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       <AnimatePresence>
         {explore && (
           <motion.button

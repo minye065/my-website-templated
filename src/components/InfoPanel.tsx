@@ -47,12 +47,6 @@ export default function InfoPanel({
         <div>
           <div className="flex items-center gap-2">
             <span className="font-mono text-[10px] tracking-widest text-white/40 uppercase">{info.kind}</span>
-            <span
-              className="rounded px-1.5 py-0.5 font-mono text-[9.5px]"
-              style={{ background: `${info.accent}22`, color: info.accent }}
-            >
-              {info.badge}
-            </span>
           </div>
           <h2 className="mt-1 text-lg leading-tight font-medium text-white">{info.title}</h2>
         </div>

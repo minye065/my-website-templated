@@ -20,12 +20,6 @@ export const PROJECTS: Project[] = [
   },
 ];
 
-export const NOW: string[] = [
-  'Rewriting the skysweep renderer to cull off-screen labels properly',
-  'Reading through the SQLite btree source, taking notes',
-  'Slowly learning celestial navigation the analog way',
-];
-
 export interface Contact {
   label: string;
   href: string;
