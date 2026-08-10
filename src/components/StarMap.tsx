@@ -265,13 +265,9 @@ export default function StarMap({ active }: { active: boolean }) {
     const out: SearchHit[] = [];
     CATALOG.dsos.forEach((d, i) => {
       const hay = `${d.desig} ${d.name ?? ''}`.toLowerCase();
-      if (hay.includes(q)) out.push({ label: d.name ?? d.desig, sub: `${d.desig} · ${d.con}`, sel: { kind: 'dso', index: i } });
+      if (hay.includes(q)) out.push({ label: d.desig, sub: d.con, sel: { kind: 'dso', index: i } });
     });
-    CATALOG.stars.forEach((s, i) => {
-      if (s.name.toLowerCase().includes(q)) {
-        out.push({ label: s.name, sub: `star · ${s.con} · mag ${s.mag.toFixed(1)}`, sel: { kind: 'star', index: i } });
-      }
-    });
+
     return out.slice(0, 8);
   }, [query]);
 

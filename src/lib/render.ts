@@ -1,5 +1,5 @@
 import { CATALOG, type Catalog, type Dso, dsoFamily, FAMILY_COLOR } from './catalog';
-import { clamp, OUT, projectRaDec, STAR_COLORS, type View, wrapLon } from './sky';
+import { clamp, OUT, projectRaDec, type View, wrapLon } from './sky';
 
 const TAU = Math.PI * 2;
 
@@ -10,7 +10,7 @@ export interface Layers {
 }
 
 export interface Selection {
-  kind: 'star' | 'dso';
+  kind: 'dso';
   index: number;
 }
 
@@ -78,56 +78,6 @@ function drawBackground(ctx: CanvasRenderingContext2D, v: View) {
 /* ------------------------------------------------------------------ */
 
 
-function starRadius(v: View, mag: number) {
-  const zoomK = Math.pow(70 / v.fov, 0.28);
-  return Math.max(1.1, (6.4 - mag) * 0.72 * zoomK);
-}
-
-function drawStars(ctx: CanvasRenderingContext2D, v: View, cat: Catalog, labels: boolean, boxes: Box[]) {
-  ctx.save();
-  for (const s of cat.stars) {
-    if (!projectRaDec(v, s.ra, s.dec)) continue;
-    const px = OUT.x;
-    const py = OUT.y;
-    if (px < -30 || py < -30 || px > v.w + 30 || py > v.h + 30) continue;
-    const r = starRadius(v, s.mag);
-    const col = STAR_COLORS[s.ci];
-
-    const g = ctx.createRadialGradient(px, py, 0, px, py, r * 5);
-    g.addColorStop(0, col.replace('rgb(', 'rgba(').replace(')', ',0.34)'));
-    g.addColorStop(0.35, col.replace('rgb(', 'rgba(').replace(')', ',0.08)'));
-    g.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = g;
-    ctx.beginPath();
-    ctx.arc(px, py, r * 5, 0, TAU);
-    ctx.fill();
-
-    ctx.fillStyle = col;
-    ctx.beginPath();
-    ctx.arc(px, py, r, 0, TAU);
-    ctx.fill();
-  }
-
-  if (labels) {
-    const limit = v.fov > 110 ? 2.1 : v.fov > 60 ? 2.8 : v.fov > 25 ? 3.6 : 6.5;
-    ctx.font = '500 11.5px ui-sans-serif, system-ui, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(222,233,255,0.82)';
-    for (const i of cat.named) {
-      const s = cat.stars[i];
-      if (s.mag > limit) break;
-      if (!projectRaDec(v, s.ra, s.dec)) continue;
-      const px = OUT.x;
-      const py = OUT.y;
-      if (px < 0 || py < 0 || px > v.w || py > v.h) continue;
-      const tw = ctx.measureText(s.name).width;
-      const bx = px + starRadius(v, s.mag) + 6;
-      if (fits(boxes, { x0: bx - 3, y0: py - 8, x1: bx + tw + 3, y1: py + 8 })) ctx.fillText(s.name, bx, py);
-    }
-  }
-  ctx.restore();
-}
 
 export function dsoRadius(v: View, d: Dso): number {
   return clamp(((d.size / 60) * v.scale) / 2, 5, Math.max(5, Math.min(v.w, v.h) * 0.45));
@@ -180,7 +130,7 @@ function drawDsos(ctx: CanvasRenderingContext2D, v: View, cat: Catalog, labels: 
 
     if (!labels) continue;
     if (v.fov > 110 && d.mag > 7) continue;
-    const t = v.fov < 40 && d.name ? `${d.desig} · ${d.name}` : d.desig;
+    const t = d.desig;
     ctx.textAlign = 'center';
     const tw = ctx.measureText(t).width;
     const ly = py + r + 9;
@@ -229,17 +179,11 @@ export function drawSky(
   if (layers.background) drawBackground(ctx, v);
 
   const boxes: Box[] = [];
-  drawStars(ctx, v, cat, layers.labels, boxes);
   if (layers.deepSky) drawDsos(ctx, v, cat, layers.labels, boxes);
 
-  if (selected) {
-    if (selected.kind === 'dso') {
-      const d = cat.dsos[selected.index];
-      if (d && projectRaDec(v, d.ra, d.dec)) drawReticle(ctx, OUT.x, OUT.y, dsoRadius(v, d), time);
-    } else {
-      const s = cat.stars[selected.index];
-      if (s && projectRaDec(v, s.ra, s.dec)) drawReticle(ctx, OUT.x, OUT.y, starRadius(v, s.mag) + 3, time);
-    }
+  if (selected && selected.kind === 'dso') {
+    const d = cat.dsos[selected.index];
+    if (d && projectRaDec(v, d.ra, d.dec)) drawReticle(ctx, OUT.x, OUT.y, dsoRadius(v, d), time);
   }
   ctx.restore();
 }
@@ -262,14 +206,5 @@ export function pick(v: View, mx: number, my: number, layers: Layers): Selection
     }
   }
 
-  for (let i = 0; i < cat.stars.length; i++) {
-    const s = cat.stars[i];
-    if (!projectRaDec(v, s.ra, s.dec)) continue;
-    const dd = Math.hypot(OUT.x - mx, OUT.y - my);
-    if (dd < 18 && dd - 4 < bestScore) {
-      bestScore = dd - 4;
-      best = { kind: 'star', index: i };
-    }
-  }
   return best;
 }

@@ -38,16 +38,8 @@ export default function TourCard({ info }: { info: ObjectInfo }) {
         </div>
       )}
       <div className="px-3 py-2.5">
-        <div className="flex items-center gap-2">
-          <span
-            className="rounded px-1.5 py-0.5 font-mono text-[9.5px]"
-            style={{ background: `${info.accent}22`, color: info.accent }}
-          >
-            {info.badge}
-          </span>
-          <span className="font-mono text-[9.5px] tracking-wider text-white/40 uppercase">{info.kind}</span>
-        </div>
-        <div className="mt-1 text-xs font-medium text-white">{info.title}</div>
+        <span className="font-mono text-[9.5px] tracking-wider text-white/40 uppercase">{info.kind}</span>
+        <div className="mt-1 text-xs font-medium" style={{ color: info.accent }}>{info.title}</div>
       </div>
     </motion.div>
   );

@@ -140,7 +140,7 @@ export default function InfoPanel({
               rel="noreferrer noopener"
               className="font-mono text-[10px] text-sky-300/80 hover:text-sky-200"
             >
-              images.nasa.gov ↗
+              NASA ↗
             </a>
           </div>
         </div>

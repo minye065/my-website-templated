@@ -46,11 +46,6 @@ export default function Lightbox({ image, onClose }: { image: LightboxImage; onC
           alt={image.alt}
           className="max-h-[82vh] w-auto max-w-full rounded-lg object-contain shadow-2xl"
         />
-        {(image.caption || image.alt) && (
-          <figcaption className="mt-3 max-w-2xl text-center font-mono text-[11px] leading-relaxed text-white/60">
-            {image.caption ?? image.alt}
-          </figcaption>
-        )}
       </motion.figure>
 
       <button
