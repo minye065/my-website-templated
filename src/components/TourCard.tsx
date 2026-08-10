@@ -3,7 +3,6 @@ import { motion } from 'motion/react';
 import { findPhoto, type NasaPhoto } from '../lib/nasa';
 import type { ObjectInfo } from '../lib/info';
 
-/** Ambient caption shown while the sky drifts on its own. */
 export default function TourCard({ info }: { info: ObjectInfo }) {
   const [photo, setPhoto] = useState<NasaPhoto | null>(null);
 
@@ -20,15 +19,13 @@ export default function TourCard({ info }: { info: ObjectInfo }) {
 
   return (
     <motion.div
-      key={info.key}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 8 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
-      className="pointer-events-none absolute bottom-4 left-4 z-10 hidden w-60 overflow-hidden rounded-xl border border-white/10 bg-black/55 backdrop-blur-md sm:block"
-    >
+      className="pointer-events-none absolute bottom-4 left-4 z-10 hidden w-60 overflow-hidden rounded-xl border bg-black/55 sm:block">
       {photo && (
-        <div className="h-28 w-full overflow-hidden">
+        <div className="h-28 w-full flex-1 overflow-hidden">
           <img
             src={photo.url}
             alt={photo.title}
@@ -38,7 +35,6 @@ export default function TourCard({ info }: { info: ObjectInfo }) {
         </div>
       )}
       <div className="px-3 py-2.5">
-        <span className="font-mono text-[9.5px] tracking-wider text-white/40 uppercase">{info.kind}</span>
         <div className="mt-1 text-xs font-medium" style={{ color: info.accent }}>{info.title}</div>
       </div>
     </motion.div>
