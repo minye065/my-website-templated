@@ -23,13 +23,13 @@ export default function TourCard({ info }: { info: ObjectInfo }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 8 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
-      className="pointer-events-none absolute bottom-4 left-4 z-10 hidden w-60 overflow-hidden rounded-xl bg-black/55 sm:block">
+      className="pointer-events-none absolute bottom-4 left-4 z-10 hidden w-60 overflow-hidden rounded-xl bg-[#080b08] sm:block">
       {photo && (
         <div className="h-28 w-full flex-1 overflow-hidden">
           <img
             src={photo.url}
             alt={photo.title}
-            className="h-full w-full object-cover opacity-90"
+            className="h-full w-full object-cover"
             onError={(e) => ((e.target as HTMLImageElement).style.display = 'none')}
           />
         </div>
