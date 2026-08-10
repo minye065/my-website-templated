@@ -346,15 +346,8 @@ export default function StarMap({ active }: { active: boolean }) {
                   {label}
                 </button>
               ))}
-              <button
-                onClick={() => flyTo(HOME.ra, HOME.dec, HOME.fov, 900)}
-                className="rounded-md border border-white/10 bg-black/50 px-2 py-1 font-mono text-[10px] text-white/60 backdrop-blur-md hover:text-white"
-              >
-                reset view
-              </button>
             </div>
 
-            {/* zoom */}
             <div className="pointer-events-auto absolute right-3 bottom-3 flex items-center gap-2">
               <div className="flex overflow-hidden rounded-md border border-white/10 bg-black/50 backdrop-blur-md">
                 <button onClick={() => zoomAt(0.66)} className="px-2.5 py-1 text-white/70 hover:bg-white/10 hover:text-white">
