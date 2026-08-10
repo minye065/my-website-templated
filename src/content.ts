@@ -3,11 +3,9 @@
  * Add / remove / reorder items in these arrays and the page updates.   *
  * ------------------------------------------------------------------ */
 
-
 export interface Project {
   name: string;
   desc: string;
-  tag: string;
   href: string;
 }
 
@@ -15,7 +13,6 @@ export const PROJECTS: Project[] = [
   {
     name: 'placeholder',
     desc: '',
-    tag: 'go · htmx',
     href: 'https://github.com',
   },
 ];

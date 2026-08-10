@@ -2,23 +2,26 @@ import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { findPhoto, type NasaPhoto } from '../lib/nasa';
 import type { ObjectInfo } from '../lib/info';
+import { useLightbox } from './Lightbox';
 
 export default function InfoPanel({
   info,
   onClose,
-  onCenter,
 }: {
   info: ObjectInfo;
   onClose: () => void;
-  onCenter: () => void;
+  onCenter?: () => void;
 }) {
   const [photo, setPhoto] = useState<NasaPhoto | null>(null);
   const [loading, setLoading] = useState(true);
+  const [imageReady, setImageReady] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const openLightbox = useLightbox();
 
   useEffect(() => {
     let alive = true;
     setPhoto(null);
+    setImageReady(false);
     setExpanded(false);
     setLoading(true);
     findPhoto(info.key, info.queries, info.tokens)
@@ -69,8 +72,10 @@ export default function InfoPanel({
       </div>
 
       {loading && (
-        <div className="mt-4 flex h-36 items-center justify-center rounded-xl border border-white/5 bg-white/[0.02] font-mono text-xs text-white/30">
-          Fetching NASA imagery…
+        <div className="mt-4 animate-pulse space-y-3 rounded-xl border border-white/5 bg-white/[0.02] p-3" aria-label="Loading NASA image">
+          <div className="h-44 rounded-lg bg-white/[0.06]" />
+          <div className="h-2.5 w-2/3 rounded bg-white/[0.06]" />
+          <div className="h-2 w-full rounded bg-white/[0.04]" />
         </div>
       )}
 
@@ -82,9 +87,28 @@ export default function InfoPanel({
 
       {!loading && photo && (
         <div className="mt-4 space-y-2 rounded-xl border border-white/10 bg-white/[0.02] p-3">
-          <div className="relative overflow-hidden rounded-lg bg-black/40">
-            <img src={photo.url} alt={photo.title} loading="lazy" className="h-44 w-full object-cover" />
-          </div>
+          <button
+            type="button"
+            onClick={() => openLightbox({ url: photo.url, alt: photo.title, caption: photo.title })}
+            aria-label={`Expand image: ${photo.title}`}
+            className="group relative block w-full cursor-zoom-in overflow-hidden rounded-lg bg-black/40"
+          >
+            <img src={photo.thumb} alt="" className="h-44 w-full scale-105 object-cover blur-sm" />
+            <img
+              src={photo.url}
+              alt={photo.title}
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+              onLoad={() => setImageReady(true)}
+              className={`absolute inset-0 h-44 w-full object-cover transition duration-300 group-hover:scale-[1.03] ${
+                imageReady ? 'opacity-100' : 'opacity-0'
+              }`}
+            />
+            <span className="pointer-events-none absolute right-2 bottom-2 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[9px] tracking-wide text-white/80 opacity-0 backdrop-blur-sm transition group-hover:opacity-100">
+              ⤢ expand
+            </span>
+          </button>
           <div className="flex items-center justify-between gap-2 pt-1">
             {photo.isHubble && (
               <span className="rounded bg-violet-400/15 px-1.5 py-0.5 font-mono text-[9.5px] tracking-wide text-violet-200">

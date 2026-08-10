@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { animate, stagger } from 'animejs';
-import { CONTACTS, NOW, PROFILE, PROJECTS } from '../content';
+import { CONTACTS, PROJECTS } from '../content';
 
 function isExternal(href: string) {
   return /^https?:\/\//i.test(href);
@@ -51,7 +51,6 @@ export default function Profile() {
                 <span className="font-mono text-[9px] text-white/30">→</span>
               </div>
               <p className="mt-1.5 flex-1 text-[12px] leading-relaxed text-white/60">{p.desc}</p>
-              <span className="mt-2.5 font-mono text-[9.5px] tracking-wide text-white/30">{p.tag}</span>
             </a>
           ))}
         </div>
