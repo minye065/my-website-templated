@@ -37,7 +37,7 @@ export default function Profile() {
         <p className="mt-1 text-xs">Bunch of stuff i made</p>
       </header>
 
-      <section data-reveal className="mt-6 opacity-0>
+      <section data-reveal className="mt-6 opacity-0">
         <h2 className="font-mono text-[10px] tracking-[0.25em]">
           PROJECTS
         </h2>
