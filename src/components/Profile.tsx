@@ -28,7 +28,7 @@ export default function Profile() {
     <div
       ref={ref}
       onWheel={(e) => e.stopPropagation()}
-      className="pointer-events-auto max-h-[86vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-white/10 bg-[#090b14]/85 p-6 text-white/90 shadow-2xl backdrop-blur-xl sm:p-8"
+      className="pointer-events-auto max-h-[86vh] w-full max-w-lg overflow-y-auto border border-white/10 bg-[#080b08] p-6 text-[#dfdfdf] shadow-2xl backdrop-blur-xl sm:p-8"
       data-scroll
     >
       <header data-reveal className="opacity-0">
@@ -47,7 +47,7 @@ export default function Profile() {
               className="group flex flex-col rounded-xl border border-white/10 bg-white/[0.03] p-3.5 transition hover:border-sky-300/30 hover:bg-white/[0.06]"
             >
               <div className="flex items-baseline justify-between gap-2">
-                <span className="font-mono text-xs font-semibold text-sky-200 group-hover:underline">{p.name}</span>
+                <span className="font-mono text-xs font-semibold text-[#edebe5] group-hover:underline">{p.name}</span>
                 <span className="font-mono text-[9px] text-white/30">→</span>
               </div>
               <p className="mt-1.5 flex-1 text-[12px] leading-relaxed text-white/60">{p.desc}</p>
