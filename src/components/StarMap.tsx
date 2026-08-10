@@ -3,13 +3,12 @@ import { AnimatePresence, motion } from 'motion/react';
 import { CATALOG } from '../lib/catalog';
 import { buildInfo } from '../lib/info';
 import { drawSky, loadNasaBackground, type Layers, pick, type Selection } from '../lib/render';
-import { clamp, HOME, makeView, updateView, wrapLon } from '../lib/sky';
+import { clamp, makeView, updateView, wrapLon } from '../lib/sky';
 import InfoPanel from './InfoPanel';
 import TourCard from './TourCard';
 
 const LAYER_LABELS: { key: keyof Layers; label: string }[] = [
-  { key: 'background', label: 'Milky Way' },
-  { key: 'deepSky', label: 'Deep sky' },
+  { key: 'deepSky', label: 'Objects' },
   { key: 'labels', label: 'Labels' },
 ];
 
@@ -42,7 +41,6 @@ export default function StarMap({ active }: { active: boolean }) {
 
   const info = useMemo(() => (selected ? buildInfo(selected) : null), [selected]);
 
-  /* load NASA background */
   useEffect(() => {
     loadNasaBackground(() => {
       dirty.current = true;
@@ -53,7 +51,6 @@ export default function StarMap({ active }: { active: boolean }) {
     return () => window.clearTimeout(id);
   }, []);
 
-  /* size the canvas */
   useEffect(() => {
     const el = wrapRef.current;
     const cv = canvasRef.current;
@@ -75,7 +72,6 @@ export default function StarMap({ active }: { active: boolean }) {
     return () => ro.disconnect();
   }, []);
 
-  /* render loop */
   useEffect(() => {
     let raf = 0;
     let pulseTick = 0;
@@ -154,7 +150,6 @@ export default function StarMap({ active }: { active: boolean }) {
     };
   }, []);
 
-  /* ambient tour while inactive */
   useEffect(() => {
     if (active) return;
     const pool = CATALOG.dsos.map((d, i) => ({ d, i })).filter((x) => x.d.name && x.d.mag < 9.5);
@@ -173,7 +168,6 @@ export default function StarMap({ active }: { active: boolean }) {
     };
   }, [active, flyTo]);
 
-  /* switching modes resets the selection */
   useEffect(() => {
     anim.current = null;
     setSelected(null);
@@ -184,7 +178,6 @@ export default function StarMap({ active }: { active: boolean }) {
     }
   }, [active, flyTo]);
 
-  /* pointer interaction (explore mode only) */
   useEffect(() => {
     const cv = canvasRef.current;
     if (!cv || !active) return;
@@ -331,16 +324,16 @@ export default function StarMap({ active }: { active: boolean }) {
               )}
             </div>
 
-            {/* layers */}
-            <div className="pointer-events-auto absolute bottom-3 left-3 flex flex-wrap gap-1.5">
+            {/* layer controls */}
+            <div className="pointer-events-auto absolute bottom-3 left-3 flex overflow-hidden bg-[#2d2423] divide-x divide-[#5d2d2c]">
               {LAYER_LABELS.map(({ key, label }) => (
                 <button
                   key={key}
                   onClick={() => setLayers((l) => ({ ...l, [key]: !l[key] }))}
-                  className={`rounded-md border px-2 py-1 font-mono text-[10px] backdrop-blur-md transition ${
+                  className={`px-2 py-1 font-mono text-[10px] transition ${
                     layers[key]
-                      ? 'border-sky-300/40 bg-sky-300/15 text-sky-100'
-                      : 'border-white/10 bg-black/50 text-white/40 hover:text-white/70'
+                      ? 'bg-[#4b2a29] text-[#ff4b4b]'
+                      : 'text-[#d34343]/55 hover:bg-[#3c2726] hover:text-[#ff4b4b]'
                   }`}
                 >
                   {label}
