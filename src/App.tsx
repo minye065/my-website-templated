@@ -8,8 +8,6 @@ export default function App() {
   const [explore, setExplore] = useState(false);
   const [lightbox, setLightbox] = useState<LightboxImage | null>(null);
 
-  // ESC priority: close the expanded image first (returning the user to the
-  // exact same place), and only exit the explorer if nothing is expanded.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
@@ -27,8 +25,6 @@ export default function App() {
     <LightboxContext.Provider value={setLightbox}>
       <div className="relative h-[100dvh] w-full overflow-hidden bg-[#03040a]">
         <StarMap active={explore} />
-
-        {/* Click anywhere outside the panel to hand control to the sky */}
         {!explore && (
           <button
             aria-label="Explore the star map"
@@ -61,14 +57,13 @@ export default function App() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.25 }}
               onClick={() => setExplore(false)}
-              className="absolute top-3 left-1/2 z-40 -translate-x-1/2 rounded-md border border-white/15 bg-black/60 px-3 py-2 font-mono text-xs text-white/80 backdrop-blur-md hover:bg-black/80 hover:text-white"
+              className="absolute top-3 left-1/2 z-40 -translate-x-1/2 border border-white/15 bg-black/60 px-3 py-2 font-mono text-xs text-white/80 backdrop-blur-md hover:bg-black/80 hover:text-white"
             >
               ← Exit explorer
             </motion.button>
           )}
         </AnimatePresence>
 
-        {/* Shared full-screen image viewer */}
         <AnimatePresence>
           {lightbox && <Lightbox key="lightbox" image={lightbox} onClose={() => setLightbox(null)} />}
         </AnimatePresence>

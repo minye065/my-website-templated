@@ -37,7 +37,7 @@ export default function Profile() {
         <p className="mt-1 text-xs">Bunch of stuff i made</p>
       </header>
 
-      <section data-reveal className="mt-6 opacity-0">
+      <section data-reveal className="mt-6 opacity-0absolute 
         <h2 className="font-mono text-[10px] tracking-[0.25em]">
           PROJECTS
         </h2>
@@ -49,8 +49,7 @@ export default function Profile() {
               href={p.href}
               target={isExternal(p.href) ? '_blank' : undefined}
               rel={isExternal(p.href) ? 'noreferrer noopener' : undefined}
-              className="group flex flex-col rounded-xl border border-white/10 bg-white/[0.03] p-3.5 transition hover:border-sky-300/30 hover:bg-white/[0.06]"
-            >
+              className="group flex flex-col rounded-xl bg-white/[0.02] p-3.5 transition hover:bg-white/[0.04]">
               <div className="flex items-baseline justify-between gap-2">
                 <span className="font-mono text-xs font-semibold group-hover:underline">
                   {p.name}

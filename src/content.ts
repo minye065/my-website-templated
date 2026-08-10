@@ -11,9 +11,14 @@ export interface Project {
 
 export const PROJECTS: Project[] = [
   {
-    name: 'placeholder',
-    desc: '',
-    href: 'https://github.com',
+    name: 'this site :/',
+    desc: 'some random site',
+    href: 'https://github.com/minye065/my-website-templated',
+  },
+  {
+      name: 'aud',
+      desc: 'in progress audio player of sorts',
+      href: 'https://github.com/minye065/Aud',
   },
 ];
 
@@ -23,5 +28,5 @@ export interface Contact {
 }
 
 export const CONTACTS: Contact[] = [
-  { label: 'github ↗', href: 'https://github.com/minye065' },
+  { label: 'github', href: 'https://github.com/minye065' },
 ];
