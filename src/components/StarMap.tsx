@@ -334,7 +334,7 @@ export default function StarMap({ active }: { active: boolean }) {
                 <button
                   key={key}
                   onClick={() => setLayers((l) => ({ ...l, [key]: !l[key] }))}
-                  className={`relative isolate overflow-hidden px-2.5 py-1.5 font-mono text-[10px] transition before:pointer-events-none before:absolute before:inset-y-0 before:-left-[200%] before:z-0 before:w-[75%] before:skew-x-[-22deg] before:bg-[#ff4b4b]/30 before:opacity-0 before:transition-transform before:duration-500 before:ease-out hover:before:translate-x-[405%] hover:before:opacity-100 ${                    layers[key]
+                  className={`relative isolate overflow-hidden px-2.5 py-1.5 font-mono text-[10px] transition before:pointer-events-none before:absolute before:inset-y-0 before:-left-[200%] before:z-0 before:w-[75%] before:skew-x-[-22deg] before:bg-[#ff4b4b]/30 before:opacity-0 before:transition-transform before:duration-500 before:ease-out hover:before:translate-x-[420%] hover:before:opacity-100 ${layers[key]
                       ? 'bg-[#4b2a29] text-[#ff4b4b]'
                       : 'text-[#d34343]/55 hover:bg-[#3c2726] hover:text-[#ff4b4b]'
                   }`}
