@@ -57,9 +57,8 @@ export default function App() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.25 }}
               onClick={() => setExplore(false)}
-              className="absolute top-3 left-1/2 z-40 -translate-x-1/2 bg-[#080b08] px-3 py-2 font-mono text-xs text-[#edebe5]"
-            >
-              ← Exit explorer
+              className="absolute top-3 left-1/2 z-40 -translate-x-1/2 isolate overflow-hidden bg-[#2d2423] px-3 py-2 font-mono text-xs text-[#d34343]/80 backdrop-blur-md transition hover:bg-[#3c2726] hover:text-[#ff4b4b] before:pointer-events-none before:absolute before:inset-y-0 before:-left-[200%] before:z-0 before:w-[75%] before:skew-x-[-22deg] before:bg-[#ff4b4b]/30 before:opacity-0 before:transition-transform before:duration-500 before:ease-out hover:before:translate-x-[405%] hover:before:opacity-100"            >
+              <span className="relative z-10">← Exit explorer</span>
             </motion.button>
           )}
         </AnimatePresence>
