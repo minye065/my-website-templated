@@ -308,7 +308,7 @@ export default function StarMap({ active }: { active: boolean }) {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search..."
-                className="w-full rounded-md bg-[#080b08] px-3 py-2 font-mono text-xs text-white placeholder:text-[#a3a09e]"
+                className="w-full rounded-lg border border-white/12 bg-black/60 px-3 py-2 font-mono text-xs text-white placeholder:text-white/30 backdrop-blur-md outline-none focus:border-sky-300/40"
               />
               {hits.length > 0 && (
                 <ul className="mt-1 overflow-hidden rounded-lg border border-white/10 bg-black/80 backdrop-blur-md">
@@ -329,20 +329,24 @@ export default function StarMap({ active }: { active: boolean }) {
                 </ul>
               )}
             </div>
-            <div className="pointer-events-auto absolute bottom-3 left-3 flex overflow-hidden rounded-md bg-[#2d2423] backdrop-blur-md">                {LAYER_LABELS.map(({ key, label }) => (
+
+            {/* layers */}
+            <div className="pointer-events-auto absolute bottom-3 left-3 flex overflow-hidden rounded-md bg-[#2d2423] backdrop-blur-md">
+              {LAYER_LABELS.map(({ key, label }) => (
                 <button
-                    key={key}
-                    onClick={() => setLayers((l) => ({ ...l, [key]: !l[key] }))}
-                    className={`px-2 py-1 font-mono text-[10px] transition ${
+                  key={key}
+                  onClick={() => setLayers((l) => ({ ...l, [key]: !l[key] }))}
+                  className={`relative isolate overflow-hidden px-2.5 py-1.5 font-mono text-[10px] transition before:pointer-events-none before:absolute before:inset-y-0 before:-left-[130%] before:z-0 before:w-[75%] before:skew-x-[-22deg] before:bg-[#ff4b4b]/30 before:transition-transform before:duration-500 before:ease-out hover:before:translate-x-[310%] ${
                     layers[key]
                       ? 'bg-[#4b2a29] text-[#ff4b4b]'
                       : 'text-[#d34343]/55 hover:bg-[#3c2726] hover:text-[#ff4b4b]'
-                    }`}
+                  }`}
                 >
-                    {label}
+                  <span className="relative z-10">{label}</span>
                 </button>
-                ))}
+              ))}
             </div>
+
             <div className="pointer-events-auto absolute right-3 bottom-3 flex items-center gap-2">
               <div className="flex overflow-hidden rounded-md border border-white/10 bg-black/50 backdrop-blur-md">
                 <button onClick={() => zoomAt(0.66)} className="px-2.5 py-1 text-white/70 hover:bg-white/10 hover:text-white">
