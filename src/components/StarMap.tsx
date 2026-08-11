@@ -8,7 +8,7 @@ import InfoPanel from './InfoPanel';
 import TourCard from './TourCard';
 
 const LAYER_LABELS: { key: keyof Layers; label: string }[] = [
-  { key: 'deepSky', label: 'Objects' },
+  { key: 'deepSky', label: 'Deep sky' },
   { key: 'labels', label: 'Labels' },
 ];
 
@@ -41,6 +41,7 @@ export default function StarMap({ active }: { active: boolean }) {
 
   const info = useMemo(() => (selected ? buildInfo(selected) : null), [selected]);
 
+  /* load NASA background */
   useEffect(() => {
     loadNasaBackground(() => {
       dirty.current = true;
@@ -51,6 +52,7 @@ export default function StarMap({ active }: { active: boolean }) {
     return () => window.clearTimeout(id);
   }, []);
 
+  /* size the canvas */
   useEffect(() => {
     const el = wrapRef.current;
     const cv = canvasRef.current;
@@ -72,6 +74,7 @@ export default function StarMap({ active }: { active: boolean }) {
     return () => ro.disconnect();
   }, []);
 
+  /* render loop */
   useEffect(() => {
     let raf = 0;
     let pulseTick = 0;
@@ -150,6 +153,7 @@ export default function StarMap({ active }: { active: boolean }) {
     };
   }, []);
 
+  /* ambient tour while inactive */
   useEffect(() => {
     if (active) return;
     const pool = CATALOG.dsos.map((d, i) => ({ d, i })).filter((x) => x.d.name && x.d.mag < 9.5);
@@ -168,6 +172,7 @@ export default function StarMap({ active }: { active: boolean }) {
     };
   }, [active, flyTo]);
 
+  /* switching modes resets the selection */
   useEffect(() => {
     anim.current = null;
     setSelected(null);
@@ -178,6 +183,7 @@ export default function StarMap({ active }: { active: boolean }) {
     }
   }, [active, flyTo]);
 
+  /* pointer interaction (explore mode only) */
   useEffect(() => {
     const cv = canvasRef.current;
     if (!cv || !active) return;
@@ -323,24 +329,21 @@ export default function StarMap({ active }: { active: boolean }) {
                 </ul>
               )}
             </div>
-
-            {/* layer controls */}
             <div className="pointer-events-auto absolute bottom-3 left-3 flex overflow-hidden bg-[#2d2423] divide-x divide-[#5d2d2c]">
-              {LAYER_LABELS.map(({ key, label }) => (
+                {LAYER_LABELS.map(({ key, label }) => (
                 <button
-                  key={key}
-                  onClick={() => setLayers((l) => ({ ...l, [key]: !l[key] }))}
-                  className={`px-2 py-1 font-mono text-[10px] transition ${
+                    key={key}
+                    onClick={() => setLayers((l) => ({ ...l, [key]: !l[key] }))}
+                    className={`px-2 py-1 font-mono text-[10px] transition ${
                     layers[key]
-                      ? 'bg-[#4b2a29] text-[#ff4b4b]'
-                      : 'text-[#d34343]/55 hover:bg-[#3c2726] hover:text-[#ff4b4b]'
-                  }`}
+                        ? 'bg-[#4b2a29] text-[#ff4b4b]'
+                        : 'text-[#d34343]/55 hover:bg-[#3c2726] hover:text-[#ff4b4b]'
+                    }`}
                 >
-                  {label}
+                    {label}
                 </button>
-              ))}
+                ))}
             </div>
-
             <div className="pointer-events-auto absolute right-3 bottom-3 flex items-center gap-2">
               <div className="flex overflow-hidden rounded-md border border-white/10 bg-black/50 backdrop-blur-md">
                 <button onClick={() => zoomAt(0.66)} className="px-2.5 py-1 text-white/70 hover:bg-white/10 hover:text-white">
