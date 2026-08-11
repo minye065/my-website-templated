@@ -329,15 +329,14 @@ export default function StarMap({ active }: { active: boolean }) {
                 </ul>
               )}
             </div>
-            <div className="pointer-events-auto absolute bottom-3 left-3 flex overflow-hidden bg-[#2d2423] divide-x divide-[#5d2d2c]">
-                {LAYER_LABELS.map(({ key, label }) => (
+            <div className="pointer-events-auto absolute bottom-3 left-3 flex overflow-hidden rounded-md border border-[#5d2d2c] bg-[#2d2423] backdrop-blur-md">                {LAYER_LABELS.map(({ key, label }) => (
                 <button
                     key={key}
                     onClick={() => setLayers((l) => ({ ...l, [key]: !l[key] }))}
                     className={`px-2 py-1 font-mono text-[10px] transition ${
                     layers[key]
-                        ? 'bg-[#4b2a29] text-[#ff4b4b]'
-                        : 'text-[#d34343]/55 hover:bg-[#3c2726] hover:text-[#ff4b4b]'
+                      ? 'bg-[#4b2a29] text-[#ff4b4b]'
+                      : 'text-[#d34343]/55 hover:bg-[#3c2726] hover:text-[#ff4b4b]'
                     }`}
                 >
                     {label}
