@@ -57,7 +57,7 @@ export default function App() {
               exit={{ opacity: 0, y: -8 }}
               transition={{ duration: 0.25 }}
               onClick={() => setExplore(false)}
-              className="absolute top-3 left-1/2 z-40 -translate-x-1/2 border border-white/15 bg-black/60 px-3 py-2 font-mono text-xs text-white/80 backdrop-blur-md hover:bg-black/80 hover:text-white"
+              className="absolute top-3 left-1/2 z-40 -translate-x-1/2 bg-[#080b08] px-3 py-2 font-mono text-xs text-[#edebe5]"
             >
               ← Exit explorer
             </motion.button>

@@ -308,7 +308,7 @@ export default function StarMap({ active }: { active: boolean }) {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search..."
-                className="w-full rounded-lg border border-white/12 bg-black/60 px-3 py-2 font-mono text-xs text-white placeholder:text-white/30 backdrop-blur-md outline-none focus:border-sky-300/40"
+                className="w-full rounded-md bg-[#080b08] px-3 py-2 font-mono text-xs text-white placeholder:text-[#a3a09e]"
               />
               {hits.length > 0 && (
                 <ul className="mt-1 overflow-hidden rounded-lg border border-white/10 bg-black/80 backdrop-blur-md">
@@ -329,7 +329,7 @@ export default function StarMap({ active }: { active: boolean }) {
                 </ul>
               )}
             </div>
-            <div className="pointer-events-auto absolute bottom-3 left-3 flex overflow-hidden rounded-md border border-[#5d2d2c] bg-[#2d2423] backdrop-blur-md">                {LAYER_LABELS.map(({ key, label }) => (
+            <div className="pointer-events-auto absolute bottom-3 left-3 flex overflow-hidden rounded-md bg-[#2d2423] backdrop-blur-md">                {LAYER_LABELS.map(({ key, label }) => (
                 <button
                     key={key}
                     onClick={() => setLayers((l) => ({ ...l, [key]: !l[key] }))}
