@@ -16,6 +16,7 @@ export default function InfoPanel({
   const [loading, setLoading] = useState(true);
   const [imageReady, setImageReady] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [transparentBackground, setTransparentBackground] = useState(false);
   const openLightbox = useLightbox();
 
   useEffect(() => {
@@ -36,14 +37,34 @@ export default function InfoPanel({
       alive = false;
     };
   }, [info.key, info.queries, info.tokens]);
+  useEffect(() => {
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key.toLowerCase() !== 's' || e.repeat) return;
 
+    const target = e.target as HTMLElement | null;
+
+    if (target?.matches('input, textarea, select, [contenteditable="true"]')) {
+      return;
+    }
+
+    setTransparentBackground((isTransparent) => !isTransparent);
+  };
+
+  window.addEventListener('keydown', onKeyDown);
+
+  return () => {
+    window.removeEventListener('keydown', onKeyDown);
+  };
+}, []);
   return (
     <motion.aside
       initial={{ opacity: 0, x: 24 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 24 }}
       transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-      className="pointer-events-auto absolute top-3 right-3 bottom-3 z-30 flex w-[330px] max-w-[calc(100vw-24px)] flex-col overflow-y-auto rounded-2xl border border-white/12 bg-[#080a12]/90 p-5 text-white shadow-2xl backdrop-blur-xl"
+      className={`pointer-events-auto absolute top-3 right-3 bottom-3 z-30 flex w-[330px] max-w-[calc(100vw-24px)] flex-col overflow-y-auto rounded-2xl border border-white/12 p-5 text-white shadow-2xl backdrop-blur-xl ${
+          transparentBackground ? 'bg-[#080a12]/0' : 'bg-[#080a12]/90'
+      }`}
       data-scroll
     >
       <div className="flex items-start justify-between gap-3">
