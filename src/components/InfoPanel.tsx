@@ -43,7 +43,7 @@ export default function InfoPanel({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 24 }}
       transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-      className="pointer-events-auto absolute top-3 right-3 bottom-3 z-30 flex w-[330px] max-w-[calc(100vw-24px)] flex-col overflow-y-auto rounded-2xl border border-white/12 bg-[#080a12] p-5 text-white shadow-2xl backdrop-blur-xl"
+      className="pointer-events-auto absolute top-3 right-3 bottom-3 z-30 flex w-[330px] max-w-[calc(100vw-24px)] flex-col overflow-y-auto rounded-2xl border border-white/12 bg-[#080a12]/90 p-5 text-white shadow-2xl backdrop-blur-xl"
       data-scroll
     >
       <div className="flex items-start justify-between gap-3">
