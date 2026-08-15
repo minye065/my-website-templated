@@ -156,7 +156,7 @@ export default function StarMap({ active }: { active: boolean }) {
     let idx = Math.floor(Math.random() * pool.length);
     const go = () => {
       const { d, i } = pool[idx];
-      flyTo(d.ra, d.dec, 60, 4000);
+      flyTo(d.ra, d.dec, 40, 4000);
       setSelected({ kind: 'dso', index: i });
       idx = (idx + 1 + Math.floor(Math.random() * 5)) % pool.length;
     };
