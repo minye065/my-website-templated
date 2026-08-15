@@ -146,7 +146,7 @@ export default function StarMap({ active }: { active: boolean }) {
       t0: performance.now(),
       dur,
       from: [v.ra, v.dec, v.fov],
-      to: [ra, clamp(dec, -88, 88), clamp(fov, 0.4, 175)],
+      to: [ra, clamp(dec, -88, 88), clamp(fov, 10, 175)],
     };
   }, []);
 
@@ -156,7 +156,7 @@ export default function StarMap({ active }: { active: boolean }) {
     let idx = Math.floor(Math.random() * pool.length);
     const go = () => {
       const { d, i } = pool[idx];
-      flyTo(d.ra, d.dec, clamp((d.size / 60) * 5, 20, 40), 4000);
+      flyTo(d.ra, d.dec, clamp((d.size / 60) * 5, 60, 100), 4000);
       setSelected({ kind: 'dso', index: i });
       idx = (idx + 1 + Math.floor(Math.random() * 5)) % pool.length;
     };
