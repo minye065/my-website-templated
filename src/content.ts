@@ -1,8 +1,3 @@
-/* ------------------------------------------------------------------ *
- * SITE CONTENT — edit everything here.                                 *
- * Add / remove / reorder items in these arrays and the page updates.   *
- * ------------------------------------------------------------------ */
-
 export interface Project {
   name: string;
   desc: string;

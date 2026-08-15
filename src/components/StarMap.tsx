@@ -179,7 +179,7 @@ export default function StarMap({ active }: { active: boolean }) {
     setQuery('');
     if (active) {
       const v = viewRef.current;
-      flyTo(v.ra, v.dec, Math.max(v.fov, 60), 700);
+      flyTo(v.ra, v.dec, Math.max(v.fov, 120), 1500);
     }
   }, [active, flyTo]);
 
