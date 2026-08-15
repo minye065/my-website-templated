@@ -41,7 +41,6 @@ export default function StarMap({ active }: { active: boolean }) {
 
   const info = useMemo(() => (selected ? buildInfo(selected) : null), [selected]);
 
-  /* load NASA background */
   useEffect(() => {
     loadNasaBackground(() => {
       dirty.current = true;
@@ -52,7 +51,6 @@ export default function StarMap({ active }: { active: boolean }) {
     return () => window.clearTimeout(id);
   }, []);
 
-  /* size the canvas */
   useEffect(() => {
     const el = wrapRef.current;
     const cv = canvasRef.current;
@@ -74,7 +72,6 @@ export default function StarMap({ active }: { active: boolean }) {
     return () => ro.disconnect();
   }, []);
 
-  /* render loop */
   useEffect(() => {
     let raf = 0;
     let pulseTick = 0;
@@ -153,14 +150,13 @@ export default function StarMap({ active }: { active: boolean }) {
     };
   }, []);
 
-  /* ambient tour while inactive */
   useEffect(() => {
     if (active) return;
     const pool = CATALOG.dsos.map((d, i) => ({ d, i })).filter((x) => x.d.name && x.d.mag < 9.5);
     let idx = Math.floor(Math.random() * pool.length);
     const go = () => {
       const { d, i } = pool[idx];
-      flyTo(d.ra, d.dec, clamp((d.size / 60) * 5, 14, 45), 3400);
+      flyTo(d.ra, d.dec, clamp((d.size / 60) * 5, 20, 40), 4000);
       setSelected({ kind: 'dso', index: i });
       idx = (idx + 1 + Math.floor(Math.random() * 5)) % pool.length;
     };
@@ -172,18 +168,16 @@ export default function StarMap({ active }: { active: boolean }) {
     };
   }, [active, flyTo]);
 
-  /* switching modes resets the selection */
   useEffect(() => {
     anim.current = null;
     setSelected(null);
     setQuery('');
     if (active) {
       const v = viewRef.current;
-      flyTo(v.ra, v.dec, Math.max(v.fov, 120), 1500);
+      flyTo(v.ra, v.dec, Math.max(v.fov, 80), 600);
     }
   }, [active, flyTo]);
 
-  /* pointer interaction (explore mode only) */
   useEffect(() => {
     const cv = canvasRef.current;
     if (!cv || !active) return;
@@ -286,12 +280,10 @@ export default function StarMap({ active }: { active: boolean }) {
         className={`block h-full w-full ${active ? 'cursor-grab active:cursor-grabbing' : ''}`}
       />
 
-      {/* ambient caption while idle */}
       <AnimatePresence mode="wait">
         {!active && info && <TourCard key={info.key} info={info} />}
       </AnimatePresence>
 
-      {/* explorer chrome */}
       <AnimatePresence>
         {active && (
           <motion.div
@@ -302,7 +294,6 @@ export default function StarMap({ active }: { active: boolean }) {
             transition={{ duration: 0.25 }}
             className="pointer-events-none absolute inset-0 z-20"
           >
-            {/* search */}
             <div className="pointer-events-auto absolute top-3 left-3 w-64 max-w-[calc(100vw-24px)]">
               <input
                 value={query}
