@@ -299,7 +299,7 @@ export default function StarMap({ active }: { active: boolean }) {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search..."
-                className="w-full rounded-lg border border-white/12 bg-black/60 px-3 py-2 font-mono text-xs text-white placeholder:text-white/30 backdrop-blur-md outline-none focus:border-sky-300/40"
+                className="w-full rounded-lg bg-black/60 px-3 py-2 font-mono text-xs text-white placeholder:text-white/30 backdrop-blur-md outline-none"
               />
               {hits.length > 0 && (
                 <ul className="mt-1 overflow-hidden rounded-lg border border-white/10 bg-black/80 backdrop-blur-md">
