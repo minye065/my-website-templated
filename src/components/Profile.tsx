@@ -30,7 +30,7 @@ export default function Profile() {
     <div
       ref={ref}
       onWheel={(e) => e.stopPropagation()}
-      className="pointer-events-auto max-h-[86vh] w-full max-w-lg overflow-y-auto border border-white/10 bg-[#080b08] p-6 text-[#dfdfdf] shadow-2xl sm:p-8"
+      className="pointer-events-auto max-h-[86vh] w-full max-w-lg overflow-y-auto border border-white/10 bg-[#080b08]/10 p-6 text-[#dfdfdf] shadow-2xl sm:p-8"
       data-scroll
     >
       <header data-reveal className="opacity-0">

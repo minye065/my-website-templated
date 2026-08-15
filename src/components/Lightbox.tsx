@@ -7,19 +7,10 @@ export interface LightboxImage {
   caption?: string;
 }
 
-/**
- * Call this (from anywhere under the provider) to expand an image.
- * Passing `null` is not needed — closing is handled by App / the overlay.
- */
 export const LightboxContext = createContext<(img: LightboxImage) => void>(() => {});
 
 export const useLightbox = () => useContext(LightboxContext);
 
-/**
- * Full-screen image viewer. It deliberately keeps everything behind it
- * mounted and untouched, so closing (ESC / click / button) returns the
- * user to the exact same place they were before opening.
- */
 export default function Lightbox({ image, onClose }: { image: LightboxImage; onClose: () => void }) {
   return (
     <motion.div
