@@ -81,7 +81,7 @@ function drawBackground(ctx: CanvasRenderingContext2D, v: View): void
 
 export function dsoRadius(v: View, d: Dso): number
 {
-  return clamp(((d.size / 60) * v.scale) / 2, 5, Math.max(5, Math.min(v.w, v.h) * 0.45));
+  return clamp(v.scale * 0.15, 5, 30);
 }
 
 function drawDsos(ctx: CanvasRenderingContext2D, v: View, cat: Catalog, labels: boolean, boxes: Box[]): void
