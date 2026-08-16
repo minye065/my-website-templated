@@ -7,7 +7,7 @@ import Lightbox, { LightboxContext, type LightboxImage } from './components/Ligh
 export default function App() {
   const [explore, setExplore] = useState(false);
   const [lightbox, setLightbox] = useState<LightboxImage | null>(null);
-
+  const [showPanel, setShowPanel] = useState(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return;
@@ -15,17 +15,22 @@ export default function App() {
         setLightbox(null);
         return;
       }
+      if(showPanel)
+      {
+          setShowPanel(false);
+          return;
+      }
       setExplore(false);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [lightbox]);
+  }, [lightbox, showPanel]);
 
   return (
     <LightboxContext.Provider value={setLightbox}>
       <div className="relative h-[100dvh] w-full overflow-hidden bg-[#03040a]">
         <StarMap active={explore} />
-        {!explore && (
+        {!explore && !showPanel && (
           <button
             aria-label="Explore the star map"
             onClick={() => setExplore(true)}
@@ -43,10 +48,20 @@ export default function App() {
               transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
               className="pointer-events-none absolute inset-0 z-20 grid place-items-center p-4 sm:p-6"
             >
-              <Profile />
+              <Profile/>
             </motion.div>
           )}
         </AnimatePresence>
+        <AnimatePresence>
+            {!explore && (
+              <button
+                aria-label={showPanel ? "Close panel" : "Open info"}
+                onClick={() => setShowPanel((prev) => !prev)}
+                className="absolute bottom-0 left-0 z-30 h-20 w-20 bg-transparent"
+              />
+            )}
+        </AnimatePresence>
+
 
         <AnimatePresence>
           {explore && (
