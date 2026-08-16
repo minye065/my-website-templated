@@ -57,7 +57,7 @@ export default function App() {
               <button
                 aria-label={showPanel ? "Close panel" : "Open info"}
                 onClick={() => setShowPanel((prev) => !prev)}
-                className="absolute bottom-4 left-4 z-40 h-40 w-20 bg-transparent"
+                className="absolute bottom-4 left-4 z-40 h-40 w-60 bg-transparent"
               />
             )}
         </AnimatePresence>
