@@ -292,7 +292,7 @@ export default function StarMap({ active }: { active: boolean }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.25 }}
-            className="pointer-events-none absolute inset-0 z-20"
+            className="pointer-events-none absolute inset-0 z-  20"
           >
             <div className="pointer-events-auto absolute top-3 left-3 w-64 max-w-[calc(100vw-24px)]">
               <input

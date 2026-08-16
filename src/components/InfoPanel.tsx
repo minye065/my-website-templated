@@ -16,8 +16,13 @@ export default function InfoPanel({
   const [loading, setLoading] = useState(true);
   const [imageReady, setImageReady] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const [transparentBackground, setTransparentBackground] = useState(false);
-  const openLightbox = useLightbox();
+  const [transparentBackground, setTransparentBackground] = useState(
+  () => localStorage.getItem('panelTransparent') === 'true'
+  );
+  useEffect(() => {
+  localStorage.setItem('panelTransparent', String(transparentBackground));
+  }, [transparentBackground]);  
+const openLightbox = useLightbox();
 
   useEffect(() => {
     let alive = true;
@@ -62,8 +67,8 @@ export default function InfoPanel({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 24 }}
       transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-      className={`pointer-events-auto absolute top-3 right-3 z-30 flex h-fit max-h-[calc(100dvh-24px)] w-[330px] max-w-[calc(100vw-24px)] flex-col overflow-y-auto rounded-2xl border border-white/12 p-5 text-white shadow-2xl backdrop-blur-xl ${
-          transparentBackground ? 'bg-[#080a12]/0' : 'bg-[#080a12]/90'
+      className={`pointer-events-auto absolute top-3 right-3 z-30 flex h-fit max-h-[calc(100dvh-24px)] w-[330px] max-w-[calc(100vw-24px)] flex-col overflow-y-auto rounded-2xl p-5 text-white shadow-2xl backdrop-blur-xl ${
+          transparentBackground ? 'bg-[#080a12]/[10%]' : 'bg-[#080a12]/[80%]'
       }`}
       data-scroll
     >

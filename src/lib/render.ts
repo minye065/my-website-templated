@@ -3,30 +3,28 @@ import { clamp, OUT, projectRaDec, type View, wrapLon } from './sky';
 
 const TAU = Math.PI * 2;
 
-export interface Layers
-{
+export interface Layers {
   background: boolean;
   labels: boolean;
   deepSky: boolean;
 }
 
-export interface Selection
-{
+export interface Selection {
   kind: 'dso';
   index: number;
 }
 
-interface Box
-{
+interface Box {
   x0: number;
   y0: number;
   x1: number;
   y1: number;
 }
 
-function fits(boxes: Box[], b: Box): boolean
-{
-  for (const o of boxes) if (b.x0 < o.x1 && b.x1 > o.x0 && b.y0 < o.y1 && b.y1 > o.y0) return false;
+function fits(boxes: Box[], b: Box): boolean {
+  for (const o of boxes) {
+    if (b.x0 < o.x1 && b.x1 > o.x0 && b.y0 < o.y1 && b.y1 > o.y0) return false;
+  }
   boxes.push(b);
   return true;
 }
@@ -36,22 +34,13 @@ let bgReady = false;
 
 const NASA_BG = 'https://science.nasa.gov/specials/apps/hubble-skymap/messier/background_image_set/';
 
-export function getSkyTexture(): HTMLImageElement | null
-{
-  return bgImage;
-}
-
-export function loadNasaBackground(onUpdate: () => void): void
-{
+export function loadNasaBackground(onUpdate: () => void): void {
   if (bgImage) return;
-  const load = (file: string, hi: boolean) =>
-  {
+  const load = (file: string, hi: boolean) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.onload = () =>
-    {
-      if (hi || !bgReady)
-      {
+    img.onload = () => {
+      if (hi || !bgReady) {
         bgImage = img;
         bgReady = true;
         onUpdate();
@@ -64,8 +53,7 @@ export function loadNasaBackground(onUpdate: () => void): void
   load('image.jpg', true);
 }
 
-function drawBackground(ctx: CanvasRenderingContext2D, v: View): void
-{
+function drawBackground(ctx: CanvasRenderingContext2D, v: View): void {
   if (!bgReady || !bgImage) return;
   const skyW = 360 * v.scale;
   const skyH = 180 * v.scale;
@@ -79,18 +67,144 @@ function drawBackground(ctx: CanvasRenderingContext2D, v: View): void
   ctx.restore();
 }
 
-export function dsoRadius(v: View, d: Dso): number
-{
+export function dsoRadius(v: View, _d: Dso): number {
   return clamp(v.scale * 0.3, 5, 30);
 }
 
-function drawDsos(ctx: CanvasRenderingContext2D, v: View, cat: Catalog, labels: boolean, boxes: Box[]): void
-{
+function drawGalaxy(ctx: CanvasRenderingContext2D, px: number, py: number, r: number, col: string): void {
+  const grad = ctx.createRadialGradient(px, py, 0, px, py, r * 0.4);
+  grad.addColorStop(0, col);
+  grad.addColorStop(1, 'transparent');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(px, py, r * 0.4, 0, TAU);
+  ctx.fill();
+  ctx.strokeStyle = col;
+  ctx.lineWidth = Math.max(1, r * 0.08);
+  ctx.lineCap = 'round';
+  for (let arm = 0; arm < 2; arm++) {
+    const offset = arm * Math.PI;
+    ctx.beginPath();
+    for (let t = 0; t <= 1; t += 0.02) {
+      const angle = t * Math.PI * 2.2 + offset;
+      const radius = r * 0.15 + t * r * 0.85;
+      const x = px + Math.cos(angle) * radius;
+      const y = py + Math.sin(angle) * radius;
+      if (t === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+  }
+}
+
+function drawStar(ctx: CanvasRenderingContext2D, cx: number, cy: number, outerR: number, innerR: number, rot: number): void {
+  ctx.beginPath();
+  for (let i = 0; i < 10; i++) {
+    const angle = rot + (i * Math.PI) / 5;
+    const rad = i % 2 === 0 ? outerR : innerR;
+    const x = cx + Math.cos(angle) * rad;
+    const y = cy + Math.sin(angle) * rad;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawTriangle(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number, angle: number): void {
+  const tipX = cx - Math.cos(angle) * size * 0.6;
+  const tipY = cy - Math.sin(angle) * size * 0.6;
+  const baseAngle = angle + Math.PI / 2;
+  const b1x = cx + Math.cos(angle) * size * 0.5 + Math.cos(baseAngle) * size * 0.45;
+  const b1y = cy + Math.sin(angle) * size * 0.5 + Math.sin(baseAngle) * size * 0.45;
+  const b2x = cx + Math.cos(angle) * size * 0.5 - Math.cos(baseAngle) * size * 0.45;
+  const b2y = cy + Math.sin(angle) * size * 0.5 - Math.sin(baseAngle) * size * 0.45;
+  ctx.beginPath();
+  ctx.moveTo(tipX, tipY);
+  ctx.lineTo(b1x, b1y);
+  ctx.lineTo(b2x, b2y);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawRay(ctx: CanvasRenderingContext2D, px: number, py: number, angle: number, innerDist: number, length: number, width: number): void {
+  ctx.lineWidth = width;
+  ctx.lineCap = 'round';
+  const x0 = px + Math.cos(angle) * innerDist;
+  const y0 = py + Math.sin(angle) * innerDist;
+  const x1 = px + Math.cos(angle) * (innerDist + length);
+  const y1 = py + Math.sin(angle) * (innerDist + length);
+  ctx.beginPath();
+  ctx.moveTo(x0, y0);
+  ctx.lineTo(x1, y1);
+  ctx.stroke();
+}
+
+function drawCluster(ctx: CanvasRenderingContext2D, px: number, py: number, r: number, col: string): void {
+  ctx.fillStyle = col;
+  ctx.strokeStyle = col;
+  drawStar(ctx, px, py, r * 0.55, r * 0.24, -Math.PI / 2);
+  for (let i = 0; i < 8; i++) {
+    const angle = (i * Math.PI) / 4 - Math.PI / 2;
+    const dist = r * 0.85;
+    const sx = px + Math.cos(angle) * dist;
+    const sy = py + Math.sin(angle) * dist;
+    drawRay(ctx, px, py, angle, r * 0.4, r * 0.22, Math.max(1.5, r * 0.06));
+    if (i % 2 === 0) drawStar(ctx, sx, sy, r * 0.22, r * 0.09, -Math.PI / 2);
+    else drawTriangle(ctx, sx, sy, r * 0.3, angle);
+  }
+}
+
+function drawWispyBlob(ctx: CanvasRenderingContext2D, cx: number, cy: number, rad: number, seed: number): void {
+  const n = 10;
+  const pts: [number, number][] = [];
+  for (let i = 0; i < n; i++) {
+    const angle = (i / n) * TAU;
+    const wobble = 1 + 0.35 * Math.sin(angle * 3 + seed) + 0.15 * Math.sin(angle * 7 + seed * 1.7);
+    pts.push([cx + Math.cos(angle) * rad * wobble, cy + Math.sin(angle) * rad * wobble]);
+  }
+  ctx.beginPath();
+  ctx.moveTo((pts[0][0] + pts[n - 1][0]) / 2, (pts[0][1] + pts[n - 1][1]) / 2);
+  for (let i = 0; i < n; i++) {
+    const next = pts[(i + 1) % n];
+    const midX = (pts[i][0] + next[0]) / 2;
+    const midY = (pts[i][1] + next[1]) / 2;
+    ctx.quadraticCurveTo(pts[i][0], pts[i][1], midX, midY);
+  }
+  ctx.closePath();
+}
+
+function drawSpark(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number): void {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - s);
+  ctx.quadraticCurveTo(cx, cy, cx + s, cy);
+  ctx.quadraticCurveTo(cx, cy, cx, cy + s);
+  ctx.quadraticCurveTo(cx, cy, cx - s, cy);
+  ctx.quadraticCurveTo(cx, cy, cx, cy - s);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawNebula(ctx: CanvasRenderingContext2D, px: number, py: number, r: number, col: string): void {
+  ctx.fillStyle = col;
+  ctx.globalAlpha = 0.35;
+  drawWispyBlob(ctx, px - r * 0.15, py - r * 0.1, r * 0.55, 0);
+  ctx.fill();
+  drawWispyBlob(ctx, px + r * 0.2, py + r * 0.05, r * 0.5, 2);
+  ctx.fill();
+  drawWispyBlob(ctx, px, py + r * 0.15, r * 0.45, 4.5);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  drawSpark(ctx, px, py, r * 0.25);
+  drawSpark(ctx, px + r * 0.35, py - r * 0.2, r * 0.12);
+  drawSpark(ctx, px - r * 0.3, py + r * 0.25, r * 0.14);
+}
+
+function drawDsos(ctx: CanvasRenderingContext2D, v: View, cat: Catalog, labels: boolean, boxes: Box[]): void {
   ctx.save();
   ctx.font = '600 11px ui-sans-serif, system-ui, sans-serif';
   ctx.textBaseline = 'middle';
-  for (const d of cat.dsos)
-  {
+  for (const d of cat.dsos) {
     if (!projectRaDec(v, d.ra, d.dec)) continue;
     const px = OUT.x;
     const py = OUT.y;
@@ -104,144 +218,9 @@ function drawDsos(ctx: CanvasRenderingContext2D, v: View, cat: Catalog, labels: 
     ctx.arc(px, py, r * 0.92, 0, TAU);
     ctx.fill();
     ctx.globalAlpha = 0.85;
-    if (fam === 'galaxy')
-    {
-      const grad = ctx.createRadialGradient(px, py, 0, px, py, r * 0.4);
-      grad.addColorStop(0, col);
-      grad.addColorStop(1, 'transparent');
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(px, py, r * 0.4, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = col;
-      ctx.lineWidth = Math.max(1, r * 0.08);
-      ctx.lineCap = 'round';
-      for (let arm = 0; arm < 2; arm++)
-      {
-        const offset = arm * Math.PI;
-        ctx.beginPath();
-        for (let t = 0; t <= 1; t += 0.02)
-        {
-          const angle = t * Math.PI * 2.2 + offset;
-          const radius = r * 0.15 + t * r * 0.85;
-          const x = px + Math.cos(angle) * radius;
-          const y = py + Math.sin(angle) * radius;
-          t === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-      }
-    }
-    else if (fam === 'cluster')
-    {
-        ctx.fillStyle = col;
-        ctx.strokeStyle = col;
-
-        function star(cx, cy, outerR, innerR, rot) {
-        ctx.beginPath();
-        for (let i = 0; i < 10; i++) {
-            const angle = rot + (i * Math.PI) / 5;
-            const rad = i % 2 === 0 ? outerR : innerR;
-            const x = cx + Math.cos(angle) * rad;
-            const y = cy + Math.sin(angle) * rad;
-            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-        }
-        ctx.closePath();
-        ctx.fill();
-        }
-
-        function triangle(cx, cy, size, angle) {
-        const tipX = cx - Math.cos(angle) * size * 0.6;
-        const tipY = cy - Math.sin(angle) * size * 0.6;
-        const baseAngle = angle + Math.PI / 2;
-        const b1x = cx + Math.cos(angle) * size * 0.5 + Math.cos(baseAngle) * size * 0.45;
-        const b1y = cy + Math.sin(angle) * size * 0.5 + Math.sin(baseAngle) * size * 0.45;
-        const b2x = cx + Math.cos(angle) * size * 0.5 - Math.cos(baseAngle) * size * 0.45;
-        const b2y = cy + Math.sin(angle) * size * 0.5 - Math.sin(baseAngle) * size * 0.45;
-        ctx.beginPath();
-        ctx.moveTo(tipX, tipY);
-        ctx.lineTo(b1x, b1y);
-        ctx.lineTo(b2x, b2y);
-        ctx.closePath();
-        ctx.fill();
-        }
-
-        function ray(angle, innerDist, length, width) {
-        ctx.lineWidth = width;
-        ctx.lineCap = 'round';
-        const x0 = px + Math.cos(angle) * innerDist;
-        const y0 = py + Math.sin(angle) * innerDist;
-        const x1 = px + Math.cos(angle) * (innerDist + length);
-        const y1 = py + Math.sin(angle) * (innerDist + length);
-        ctx.beginPath();
-        ctx.moveTo(x0, y0);
-        ctx.lineTo(x1, y1);
-        ctx.stroke();
-        }
-
-        star(px, py, r * 0.55, r * 0.24, -Math.PI / 2);
-
-        for (let i = 0; i < 8; i++) {
-        const angle = (i * Math.PI) / 4 - Math.PI / 2;
-        const dist = r * 0.85;
-        const sx = px + Math.cos(angle) * dist;
-        const sy = py + Math.sin(angle) * dist;
-
-        ray(angle, r * 0.4, r * 0.22, Math.max(1.5, r * 0.06));
-
-        if (i % 2 === 0) {
-            star(sx, sy, r * 0.22, r * 0.09, angle - Math.PI / 2);
-        } else {
-            triangle(sx, sy, r * 0.3, angle);
-        }
-        }
-    }
-    else
-    {
-      ctx.fillStyle = col;
-      function wispyBlob(cx, cy, rad, seed)
-      {
-        const n = 10;
-        const pts = [];
-        for (let i = 0; i < n; i++)
-        {
-          const angle = (i / n) * Math.PI * 2;
-          const wobble = 1 + 0.35 * Math.sin(angle * 3 + seed) + 0.15 * Math.sin(angle * 7 + seed * 1.7);
-          pts.push([cx + Math.cos(angle) * rad * wobble, cy + Math.sin(angle) * rad * wobble]);
-        }
-        ctx.beginPath();
-        ctx.moveTo((pts[0][0] + pts[n - 1][0]) / 2, (pts[0][1] + pts[n - 1][1]) / 2);
-        for (let i = 0; i < n; i++)
-        {
-          const next = pts[(i + 1) % n];
-          const midX = (pts[i][0] + next[0]) / 2;
-          const midY = (pts[i][1] + next[1]) / 2;
-          ctx.quadraticCurveTo(pts[i][0], pts[i][1], midX, midY);
-        }
-        ctx.closePath();
-      }
-      function spark(cx, cy, s)
-      {
-        ctx.beginPath();
-        ctx.moveTo(cx, cy - s);
-        ctx.quadraticCurveTo(cx, cy, cx + s, cy);
-        ctx.quadraticCurveTo(cx, cy, cx, cy + s);
-        ctx.quadraticCurveTo(cx, cy, cx - s, cy);
-        ctx.quadraticCurveTo(cx, cy, cx, cy - s);
-        ctx.closePath();
-        ctx.fill();
-      }
-      ctx.globalAlpha = 0.35;
-      wispyBlob(px - r * 0.15, py - r * 0.1, r * 0.55, 0);
-      ctx.fill();
-      wispyBlob(px + r * 0.2, py + r * 0.05, r * 0.5, 2);
-      ctx.fill();
-      wispyBlob(px, py + r * 0.15, r * 0.45, 4.5);
-      ctx.fill();
-      ctx.globalAlpha = 1;
-      spark(px, py, r * 0.25);
-      spark(px + r * 0.35, py - r * 0.2, r * 0.12);
-      spark(px - r * 0.3, py + r * 0.25, r * 0.14);
-    }
+    if (fam === 'galaxy') drawGalaxy(ctx, px, py, r, col);
+    else if (fam === 'cluster') drawCluster(ctx, px, py, r, col);
+    else drawNebula(ctx, px, py, r, col);
     ctx.globalAlpha = 1;
     if (!labels) continue;
     if (v.fov > 110 && d.mag > 7) continue;
@@ -258,8 +237,7 @@ function drawDsos(ctx: CanvasRenderingContext2D, v: View, cat: Catalog, labels: 
   ctx.restore();
 }
 
-function drawReticle(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, t: number): void
-{
+function drawReticle(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, t: number): void {
   ctx.save();
   ctx.strokeStyle = 'rgba(120,255,225,0.95)';
   ctx.lineWidth = 1.5;
@@ -271,8 +249,7 @@ function drawReticle(ctx: CanvasRenderingContext2D, x: number, y: number, r: num
   ctx.globalAlpha = 1;
   const g = rr + 8;
   ctx.beginPath();
-  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const)
-  {
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
     ctx.moveTo(x + dx * rr, y + dy * rr);
     ctx.lineTo(x + dx * g, y + dy * g);
   }
@@ -280,45 +257,31 @@ function drawReticle(ctx: CanvasRenderingContext2D, x: number, y: number, r: num
   ctx.restore();
 }
 
-export function drawSky(
-  ctx: CanvasRenderingContext2D,
-  v: View,
-  layers: Layers,
-  selected: Selection | null,
-  time: number,
-): void
-{
-  const cat = CATALOG;
+export function drawSky(ctx: CanvasRenderingContext2D, v: View, layers: Layers, selected: Selection | null, time: number): void {
   ctx.save();
   ctx.setTransform(v.dpr, 0, 0, v.dpr, 0, 0);
   ctx.fillStyle = '#03040a';
   ctx.fillRect(0, 0, v.w, v.h);
   if (layers.background) drawBackground(ctx, v);
   const boxes: Box[] = [];
-  if (layers.deepSky) drawDsos(ctx, v, cat, layers.labels, boxes);
-  if (selected && selected.kind === 'dso')
-  {
-    const d = cat.dsos[selected.index];
+  if (layers.deepSky) drawDsos(ctx, v, CATALOG, layers.labels, boxes);
+  if (selected && selected.kind === 'dso') {
+    const d = CATALOG.dsos[selected.index];
     if (d && projectRaDec(v, d.ra, d.dec)) drawReticle(ctx, OUT.x, OUT.y, dsoRadius(v, d), time);
   }
   ctx.restore();
 }
 
-export function pick(v: View, mx: number, my: number, layers: Layers): Selection | null
-{
-  const cat = CATALOG;
+export function pick(v: View, mx: number, my: number, layers: Layers): Selection | null {
   let best: Selection | null = null;
   let bestScore = Infinity;
-  if (layers.deepSky)
-  {
-    for (let i = 0; i < cat.dsos.length; i++)
-    {
-      const d = cat.dsos[i];
+  if (layers.deepSky) {
+    for (let i = 0; i < CATALOG.dsos.length; i++) {
+      const d = CATALOG.dsos[i];
       if (!projectRaDec(v, d.ra, d.dec)) continue;
       const dd = Math.hypot(OUT.x - mx, OUT.y - my);
       const reach = Math.max(22, dsoRadius(v, d));
-      if (dd < reach && dd < bestScore)
-      {
+      if (dd < reach && dd < bestScore) {
         bestScore = dd;
         best = { kind: 'dso', index: i };
       }
