@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import StarMap from './components/StarMap';
+import Profile from './components/Profile';
 import Layer1InfoPanel from './components/Layer1InfoPanel';
 import Lightbox, { LightboxContext, type LightboxImage } from './components/Lightbox';
 
@@ -39,6 +40,21 @@ export default function App() {
             className="absolute inset-0 z-10 h-full w-full cursor-crosshair bg-transparent"
           />
         )}
+
+        <AnimatePresence>
+          {!explore && (
+            <motion.div
+              key="panel"
+              initial={{ opacity: 0, scale: 0.985 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.02 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              className="pointer-events-none absolute inset-0 z-20 grid place-items-center p-4 sm:p-6"
+            >
+              <Profile />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {!explore && (
           <button
