@@ -1,50 +1,29 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { findPhoto, type NasaPhoto } from '../lib/nasa';
-import type { ObjectInfo } from '../lib/info';
 import { useLightbox } from './Lightbox';
 
+const QUERY_KEY = 'home:featured';
+const QUERIES = ['Hubble Deep Field'];
+const TOKENS = ['hubble', 'deep field'];
+
 export default function Layer1InfoPanel({
-  info,
   onClose,
 }: {
-  info: ObjectInfo;
   onClose: () => void;
-  onCenter?: () => void;
 }) {
   const [photo, setPhoto] = useState<NasaPhoto | null>(null);
   const [loading, setLoading] = useState(true);
   const [imageReady, setImageReady] = useState(false);
-  const [transparentBackground, setTransparentBackground] = useState(false);
   const openLightbox = useLightbox();
 
   useEffect(() => {
     let alive = true;
-    setPhoto(null);
-    setImageReady(false);
     setLoading(true);
-    findPhoto(info.key, info.queries, info.tokens)
-      .then((p) => {
-        if (alive) {
-          setPhoto(p);
-          setLoading(false);
-        }
-      })
+    findPhoto(QUERY_KEY, QUERIES, TOKENS)
+      .then((p) => { if (alive) { setPhoto(p); setLoading(false); } })
       .catch(() => alive && setLoading(false));
-    return () => {
-      alive = false;
-    };
-  }, [info.key, info.queries, info.tokens]);
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() !== 's' || e.repeat) return;
-      const target = e.target as HTMLElement | null;
-      if (target?.matches('input, textarea, select, [contenteditable="true"]')) return;
-      setTransparentBackground((v) => !v);
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    return () => { alive = false; };
   }, []);
 
   return (
@@ -53,13 +32,11 @@ export default function Layer1InfoPanel({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 24 }}
       transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-      className={`pointer-events-auto absolute top-3 right-3 z-30 flex h-fit max-h-[calc(100dvh-24px)] w-[330px] max-w-[calc(100vw-24px)] flex-col overflow-y-auto rounded-2xl border border-white/12 p-5 text-white shadow-2xl backdrop-blur-xl ${
-        transparentBackground ? 'bg-[#080a12]/0' : 'bg-[#080a12]/90'
-      }`}
+      className="pointer-events-auto absolute top-3 right-3 z-30 flex h-fit max-h-[calc(100dvh-24px)] w-[330px] max-w-[calc(100vw-24px)] flex-col overflow-y-auto rounded-2xl border border-white/12 bg-[#080a12]/90 p-5 text-white shadow-2xl backdrop-blur-xl"
       data-scroll
     >
       <div className="flex items-start justify-between gap-3">
-        <h2 className="text-lg leading-tight font-medium text-[#edebe5]">{info.title}</h2>
+        <h2 className="text-lg leading-tight font-medium text-[#edebe5]">Info</h2>
         <button
           onClick={onClose}
           aria-label="Close"
@@ -70,12 +47,12 @@ export default function Layer1InfoPanel({
       </div>
 
       {loading && (
-        <div className="mt-3 animate-pulse rounded-lg bg-white/[0.06] h-44" aria-label="Loading NASA image" />
+        <div className="mt-3 animate-pulse rounded-lg bg-white/[0.06] h-44" />
       )}
 
       {!loading && !photo && (
         <div className="mt-3 rounded-lg border border-white/5 bg-white/[0.02] p-3 font-mono text-[11px] text-white/35">
-          No matching image in the NASA library.
+          No matching image found.
         </div>
       )}
 
@@ -84,7 +61,6 @@ export default function Layer1InfoPanel({
           <button
             type="button"
             onClick={() => openLightbox({ url: photo.url, alt: photo.title, caption: photo.title })}
-            aria-label={`Expand image: ${photo.title}`}
             className="group relative block w-full cursor-zoom-in overflow-hidden rounded-lg bg-black/40"
           >
             <img src={photo.thumb} alt="" className="h-44 w-full scale-105 object-cover blur-sm" />
@@ -111,20 +87,7 @@ export default function Layer1InfoPanel({
             className="mt-1.5 inline-flex items-center gap-1 font-mono text-[10px] text-sky-300/80 hover:text-sky-200"
           >
             NASA
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="1em"
-              height="1em"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="m9 18 6-6-6-6" />
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
           </a>
         </div>
       )}
