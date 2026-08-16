@@ -133,34 +133,67 @@ function drawDsos(ctx: CanvasRenderingContext2D, v: View, cat: Catalog, labels: 
     }
     else if (fam === 'cluster')
     {
-      ctx.strokeStyle = col;
-      ctx.fillStyle = col;
-      const s = r * 0.5;
-      ctx.beginPath();
-      ctx.moveTo(px, py - s);
-      ctx.quadraticCurveTo(px, py, px + s, py);
-      ctx.quadraticCurveTo(px, py, px, py + s);
-      ctx.quadraticCurveTo(px, py, px - s, py);
-      ctx.quadraticCurveTo(px, py, px, py - s);
-      ctx.closePath();
-      ctx.fill();
-      const rings = [
-        { count: 6, dist: r * 0.5, size: r * 0.14 },
-        { count: 10, dist: r * 0.85, size: r * 0.16 }
-      ];
-      ctx.lineWidth = Math.max(1, r * 0.08);
-      for (const ring of rings)
-      {
-        for (let i = 0; i < ring.count; i++)
-        {
-          const angle = (i / ring.count) * Math.PI * 2;
-          const cx = px + Math.cos(angle) * ring.dist;
-          const cy = py + Math.sin(angle) * ring.dist;
-          ctx.beginPath();
-          ctx.arc(cx, cy, ring.size, 0, Math.PI * 2);
-          ctx.stroke();
+        ctx.fillStyle = col;
+        ctx.strokeStyle = col;
+
+        function star(cx, cy, outerR, innerR, rot) {
+        ctx.beginPath();
+        for (let i = 0; i < 10; i++) {
+            const angle = rot + (i * Math.PI) / 5;
+            const rad = i % 2 === 0 ? outerR : innerR;
+            const x = cx + Math.cos(angle) * rad;
+            const y = cy + Math.sin(angle) * rad;
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
         }
-      }
+        ctx.closePath();
+        ctx.fill();
+        }
+
+        function triangle(cx, cy, size, angle) {
+        const tipX = cx - Math.cos(angle) * size * 0.6;
+        const tipY = cy - Math.sin(angle) * size * 0.6;
+        const baseAngle = angle + Math.PI / 2;
+        const b1x = cx + Math.cos(angle) * size * 0.5 + Math.cos(baseAngle) * size * 0.45;
+        const b1y = cy + Math.sin(angle) * size * 0.5 + Math.sin(baseAngle) * size * 0.45;
+        const b2x = cx + Math.cos(angle) * size * 0.5 - Math.cos(baseAngle) * size * 0.45;
+        const b2y = cy + Math.sin(angle) * size * 0.5 - Math.sin(baseAngle) * size * 0.45;
+        ctx.beginPath();
+        ctx.moveTo(tipX, tipY);
+        ctx.lineTo(b1x, b1y);
+        ctx.lineTo(b2x, b2y);
+        ctx.closePath();
+        ctx.fill();
+        }
+
+        function ray(angle, innerDist, length, width) {
+        ctx.lineWidth = width;
+        ctx.lineCap = 'round';
+        const x0 = px + Math.cos(angle) * innerDist;
+        const y0 = py + Math.sin(angle) * innerDist;
+        const x1 = px + Math.cos(angle) * (innerDist + length);
+        const y1 = py + Math.sin(angle) * (innerDist + length);
+        ctx.beginPath();
+        ctx.moveTo(x0, y0);
+        ctx.lineTo(x1, y1);
+        ctx.stroke();
+        }
+
+        star(px, py, r * 0.55, r * 0.24, -Math.PI / 2);
+
+        for (let i = 0; i < 8; i++) {
+        const angle = (i * Math.PI) / 4 - Math.PI / 2;
+        const dist = r * 0.85;
+        const sx = px + Math.cos(angle) * dist;
+        const sy = py + Math.sin(angle) * dist;
+
+        ray(angle, r * 0.4, r * 0.22, Math.max(1.5, r * 0.06));
+
+        if (i % 2 === 0) {
+            star(sx, sy, r * 0.22, r * 0.09, angle - Math.PI / 2);
+        } else {
+            triangle(sx, sy, r * 0.3, angle);
+        }
+        }
     }
     else
     {
