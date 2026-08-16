@@ -4,7 +4,7 @@ import { findPhoto, type NasaPhoto } from '../lib/nasa';
 import type { ObjectInfo } from '../lib/info';
 import { useLightbox } from './Lightbox';
 
-export default function InfoPanel({
+export default function Layer1InfoPanel({
   info,
   onClose,
 }: {
