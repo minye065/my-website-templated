@@ -10,7 +10,6 @@ export default function InfoPanel({
 }: {
   info: ObjectInfo;
   onClose: () => void;
-  onCenter?: () => void;
 }) {
   const [photo, setPhoto] = useState<NasaPhoto | null>(null);
   const [loading, setLoading] = useState(true);

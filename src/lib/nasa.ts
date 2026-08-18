@@ -22,24 +22,6 @@ interface RawItem {
 const cache = new Map<string, NasaPhoto | null>();
 const inflight = new Map<string, Promise<NasaPhoto | null>>();
 const BAD = /(illustration|artist|concept|logo|poster|briefing|conference|portrait|award|employee|administrator|ceremony)/;
-
-function cleanText(value: string): string {
-  const withoutTags = value
-    .replace(/<\s*br\s*\/?\s*>/gi, ' ')
-    .replace(/<\s*\/\s*p\s*>/gi, ' ')
-    .replace(/<[^>]*>/g, ' ');
-
-  return withoutTags
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'")
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
 async function search(q: string): Promise<RawItem[]> {
   try {
     const res = await fetch(
@@ -80,8 +62,8 @@ function toPhoto(item: RawItem): NasaPhoto | null {
   if (!url) return null;
   const hay = `${d.title ?? ''} ${(d.keywords ?? []).join(' ')} ${d.description ?? ''}`;
   return {
-    title: cleanText(d.title ?? 'Untitled'),
-    description: cleanText(d.description ?? ''),
+    title: d.title ?? 'Untitled',
+    description: d.description ?? '',
     date: (d.date_created ?? '').slice(0, 10),
     url,
     thumb: byName('~thumb') ?? url,

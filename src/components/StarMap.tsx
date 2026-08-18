@@ -355,7 +355,6 @@ export default function StarMap({ active }: { active: boolean }) {
             key={info.key}
             info={info}
             onClose={() => setSelected(null)}
-            onCenter={() => flyTo(info.ra, info.dec, info.fov, 900)}
           />
         )}
       </AnimatePresence>
