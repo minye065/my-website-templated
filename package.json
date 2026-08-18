@@ -12,7 +12,7 @@
     "animejs": "^4.5.0",
     "motion": "^13.0.0",
     "react": "19.2.6",
-    "react-dom": "19.2.6",
+    "react-dom": "19.2.6"
   },
   "devDependencies": {
     "@tailwindcss/vite": "4.1.17",
