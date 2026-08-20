@@ -34,8 +34,8 @@ export function dsoFamily(type: string): 'galaxy' | 'cluster' | 'nebula' {
 
 export const FAMILY_COLOR: Record<string, string> = {
   galaxy: '#cb00ff',
-  cluster: '#7600ff',
-  nebula: '#00E676',
+  cluster: '#FFB300',
+  nebula: '#7600ff',
 };
 
 type RawDso = [string, string | null, string, number, number, number, number, string];
