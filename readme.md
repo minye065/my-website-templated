@@ -1,5 +1,6 @@
 Just a regular website (sorta) with some not so obvious things
 It's a personal website with some of my projects that are near done or somewhat presentable
+Made with tailwindcss, react, vite, animejs and motionjs and hosted on github pages
 
 Link: https://minye065.github.io/my-website-templated/
 
