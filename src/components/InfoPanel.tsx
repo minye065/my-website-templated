@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { findPhoto, type NasaPhoto } from '../lib/nasa';
+import { findShowcase } from '../lib/hubble';
 import type { ObjectInfo } from '../lib/info';
 import { useLightbox } from './Lightbox';
 
@@ -15,6 +16,8 @@ export default function InfoPanel({
   const [loading, setLoading] = useState(true);
   const [imageReady, setImageReady] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const fromShowcase = useRef(false);
+  const fallbackArgs = useRef<{ key: string; queries: string[]; tokens: string[] } | null>(null);
   const [transparentBackground, setTransparentBackground] = useState(
   () => localStorage.getItem('panelTransparent') === 'true'
   );
@@ -29,18 +32,53 @@ const openLightbox = useLightbox();
     setImageReady(false);
     setExpanded(false);
     setLoading(true);
-    findPhoto(info.key, info.queries, info.tokens)
-      .then((p) => {
-        if (alive) {
-          setPhoto(p);
-          setLoading(false);
-        }
-      })
-      .catch(() => alive && setLoading(false));
+    fromShowcase.current = false;
+    fallbackArgs.current = { key: info.key, queries: info.queries, tokens: info.tokens };
+
+    const runFallback = () =>
+      findPhoto(info.key, info.queries, info.tokens)
+        .then((p) => {
+          if (alive) setPhoto(p);
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (alive) setLoading(false);
+        });
+
+    const desig = info.key.startsWith('dso:') ? info.key.slice(4) : null;
+    const showcase = desig ? findShowcase(desig) : null;
+    if (showcase) {
+      fromShowcase.current = true;
+      setPhoto({
+        title: showcase.title,
+        description: '',
+        date: '',
+        url: showcase.url,
+        thumb: showcase.url,
+        isHubble: true,
+        link: showcase.source,
+      });
+      setLoading(false);
+    } else {
+      runFallback();
+    }
+
     return () => {
       alive = false;
     };
   }, [info.key, info.queries, info.tokens]);
+
+  const handleImageError = () => {
+    if (!fromShowcase.current || !fallbackArgs.current) return;
+    fromShowcase.current = false;
+    const { key, queries, tokens } = fallbackArgs.current;
+    setImageReady(false);
+    setLoading(true);
+    findPhoto(key, queries, tokens)
+      .then((p) => setPhoto(p))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  };
   useEffect(() => {
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key.toLowerCase() !== 's' || e.repeat) return;
@@ -115,13 +153,14 @@ const openLightbox = useLightbox();
             aria-label={`Expand image: ${photo.title}`}
             className="group relative block w-full cursor-zoom-in overflow-hidden rounded-lg bg-black/40"
           >
-            <img src={photo.thumb} alt="" className="h-44 w-full scale-105 object-cover blur-sm" />
+            <img src={photo.thumb} alt="" onError={handleImageError} className="h-44 w-full scale-105 object-cover blur-sm" />
             <img
               src={photo.url}
               alt={photo.title}
               loading="eager"
               decoding="async"
               fetchPriority="high"
+              onError={handleImageError}
               onLoad={() => setImageReady(true)}
               className={`absolute inset-0 h-44 w-full object-cover transition duration-300 group-hover:scale-[1.03] ${
                 imageReady ? 'opacity-100' : 'opacity-0'
