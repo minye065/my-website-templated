@@ -32,6 +32,35 @@ function extractMeta(html, prop) {
   return m ? m[1].replace(/ - NASA Science$/, '').trim() : null;
 }
 
+const indexUrl = (kind) => `${BASE}/hubble-${kind}-catalog/`;
+
+// Some showcase objects have no detail page but appear as carousel slides on the
+// index, with assets named by catalog number (e.g. c60-61-1-jpg.webp -> C60+C61).
+function harvestIndexAssets(html, kind) {
+  const prefix = kind === 'messier' ? 'm' : 'c';
+  const label = kind === 'messier' ? 'Messier' : 'Caldwell';
+  const urls = [
+    ...new Set(
+      [...html.matchAll(/https:[^"'\s\\)]*?wp-content\/uploads\/[^"'\s\\)]*?\.(?:jpe?g|png|webp)/gi)].map(
+        (m) => m[0].split('?')[0],
+      ),
+    ),
+  ];
+  const found = {};
+  for (const url of urls) {
+    const f = decodeURIComponent(url.split('/').pop());
+    const m = new RegExp(`(?:^|[-_])${prefix}(\\d{1,3})(?:-(\\d{1,3}))?(?=[-._ ]|$)`, 'i').exec(f);
+    if (!m) continue;
+    const nums = [parseInt(m[1])];
+    if (m[2] && parseInt(m[2]) > nums[0] && parseInt(m[2]) <= 110) nums.push(parseInt(m[2]));
+    for (const n of nums) {
+      const key = `${prefix.toUpperCase()}${n}`;
+      if (!(key in found)) found[key] = { url, title: `${label} ${n}`, source: indexUrl(kind) };
+    }
+  }
+  return found;
+}
+
 const outDir = resolve(dirname(fileURLToPath(import.meta.url)), '../src/data');
 mkdirSync(outDir, { recursive: true });
 
@@ -39,10 +68,12 @@ const manifest = {};
 const allFailed = [];
 
 for (const kind of ['messier', 'caldwell']) {
-  const indexUrl = `${BASE}/hubble-${kind}-catalog/`;
-  console.log(`index: ${indexUrl}`);
-  const slugs = extractSlugs(await get(indexUrl), kind);
+  console.log(`index: ${indexUrl(kind)}`);
+  const indexHtml = await get(indexUrl(kind));
+  const slugs = extractSlugs(indexHtml, kind);
   console.log(`  ${slugs.length} object pages linked`);
+
+  const fromIndex = harvestIndexAssets(indexHtml, kind);
 
   const failed = [];
   for (const [num, slug] of slugs) {
@@ -59,6 +90,16 @@ for (const kind of ['messier', 'caldwell']) {
     }
   }
   console.log(`  captured ${slugs.length - failed.length}/${slugs.length}`);
+
+  // slide-only objects (no detail page): fall back to index carousel assets
+  let fromSlides = 0;
+  for (const [key, entry] of Object.entries(fromIndex)) {
+    if (!(key in manifest)) {
+      manifest[key] = entry;
+      fromSlides++;
+    }
+  }
+  if (fromSlides) console.log(`  +${fromSlides} slide-only objects recovered from index`);
   if (failed.length) allFailed.push(...failed);
 }
 

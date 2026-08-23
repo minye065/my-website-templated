@@ -873,5 +873,15 @@
     "url": "https://science.nasa.gov/wp-content/uploads/2023/04/c109-1b-jpg.webp",
     "title": "Caldwell 109",
     "source": "https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-caldwell-catalog/caldwell-109/"
+  },
+  "C60": {
+    "url": "https://science.nasa.gov/wp-content/uploads/2023/04/c60-61-1-jpg.webp",
+    "title": "Caldwell 60",
+    "source": "https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-caldwell-catalog/"
+  },
+  "C61": {
+    "url": "https://science.nasa.gov/wp-content/uploads/2023/04/c60-61-1-jpg.webp",
+    "title": "Caldwell 61",
+    "source": "https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-caldwell-catalog/"
   }
 }

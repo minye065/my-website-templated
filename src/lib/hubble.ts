@@ -1,4 +1,5 @@
 import manifest from '../data/hubbleShowcase.json';
+import overrides from '../data/imageOverrides.json';
 
 export interface ShowcaseImage {
   url: string;
@@ -20,6 +21,11 @@ const ALIASES: Record<string, string> = {
 };
 
 export function findShowcase(desig: string): ShowcaseImage | null {
-  const entry = (manifest as ShowcaseManifest)[desig] ?? (manifest as ShowcaseManifest)[ALIASES[desig] ?? ''];
+  const aliased = ALIASES[desig] ?? '';
+  const entry =
+    (overrides as ShowcaseManifest)[desig] ??
+    (overrides as ShowcaseManifest)[aliased] ??
+    (manifest as ShowcaseManifest)[desig] ??
+    (manifest as ShowcaseManifest)[aliased];
   return entry ? { ...entry } : null;
 }

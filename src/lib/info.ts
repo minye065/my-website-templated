@@ -42,7 +42,7 @@ export function buildInfo(sel: Selection): ObjectInfo {
         long,
         d.desig,
       ].filter(Boolean),
-      tokens: [d.desig, long, d.name ?? '', 'nebula', 'galaxy', 'cluster'].filter(Boolean),
+      tokens: [d.desig, long, d.name ?? ''].filter(Boolean),
     };
   }
 
