@@ -1,6 +1,6 @@
 Personal portfolio website with some of my projects that are near done or somewhat presentable, made with tailwindcss, react, vite, animejs and motionjs and hosted on github pages
 
-[Main page] (https://cdn.hackclub.com/01a02f6f-3b41-7f32-a418-d4642c990347/screenshot_2026-08-22_211501.png)
+[Main page](https://cdn.hackclub.com/01a02f6f-3b41-7f32-a418-d4642c990347/screenshot_2026-08-22_211501.png)
 
 Link: https://minye065.github.io/my-website-templated/
 
