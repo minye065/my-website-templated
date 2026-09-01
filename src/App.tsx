@@ -6,7 +6,7 @@ import Layer1InfoPanel from './components/Layer1InfoPanel';
 import Lightbox, { LightboxContext, type LightboxImage } from './components/Lightbox';
 import { BlackHoleRenderer } from '././blackhole/renderer/blackhole';
 import { Params, DEFAULTS } from '././blackhole/renderer/params';
-import Controls from "./components/BlackHoleControls";
+// import Controls from "./components/BlackHoleControls";
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -38,7 +38,7 @@ export default function App() {
         className="absolute inset-0 h-full w-full touch-none"
       />
       <div className="absolute right-0 top-0 z-30 h-full w-[320px] bg-black/60 backdrop-blur-md border-l border-white/10">
-        <Controls p={params} set={set} />
+        {/* <Controls p={params} set={set} /> */}
       </div>
     </div>
   );
