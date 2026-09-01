@@ -1,23 +1,68 @@
-import { useEffect, useState } from 'react';
+import { useCallback,useRef, useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import StarMap from './components/StarMap';
 import Profile from './components/Profile';
 import Layer1InfoPanel from './components/Layer1InfoPanel';
 import Lightbox, { LightboxContext, type LightboxImage } from './components/Lightbox';
+import { BlackHoleRenderer } from '././blackhole/renderer/blackhole';
+import { Params, DEFAULTS } from '././blackhole/renderer/params';
+import Controls from "./components/BlackHoleControls";
 
 export default function App() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rendererRef = useRef<BlackHoleRenderer | null>(null);
+  const [params, setParams] = useState<Params>(DEFAULTS);
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    const renderer = new BlackHoleRenderer(canvasRef.current, DEFAULTS);
+    rendererRef.current = renderer;
+    return () => {
+      renderer.dispose();
+      rendererRef.current = null;
+    };
+  }, []);
+
+  const set = useCallback((patch: Partial<Params>) => {
+    setParams((prev) => {
+      const next = { ...prev, ...patch };
+      rendererRef.current?.setParams(next);
+      return next;
+    });
+  }, []);
+
+  return (
+    <div className="relative h-full w-full overflow-hidden">
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 h-full w-full touch-none"
+      />
+      <div className="absolute right-0 top-0 z-30 h-full w-[320px] bg-black/60 backdrop-blur-md border-l border-white/10">
+        <Controls p={params} set={set} />
+      </div>
+    </div>
+  );
+}
+
+/*
+export default function App()
+{
   const [explore, setExplore] = useState(false);
   const [lightbox, setLightbox] = useState<LightboxImage | null>(null);
   const [showPanel, setShowPanel] = useState(false);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
+  useEffect(() =>
+  {
+    const onKey = (e: KeyboardEvent) =>
+    {
       if (e.key !== 'Escape') return;
-      if (lightbox) {
+      if (lightbox)
+      {
         setLightbox(null);
         return;
       }
-      if (showPanel) {
+      if (showPanel)
+      {
         setShowPanel(false);
         return;
       }
@@ -102,3 +147,4 @@ export default function App() {
     </LightboxContext.Provider>
   );
 }
+*/
