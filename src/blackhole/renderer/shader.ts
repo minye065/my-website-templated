@@ -122,7 +122,7 @@ float diskEmission(vec3 p, vec3 rd)
 
     float phi = atan(p.z, p.x);
 
-    float omega = spin * 0.5;
+    float omega = spin * 0.2;
     float a = phi + time * omega;
 
     vec3 q = vec3(cos(a), sin(a), 0.0) * (1.7 * detail) + vec3(0.0, 0.0, r * 2.15 * detail);
