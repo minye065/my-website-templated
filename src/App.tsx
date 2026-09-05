@@ -37,8 +37,7 @@ export default function App() {
         ref={canvasRef}
         className="absolute inset-0 h-full w-full touch-none"
       />
-      <div className="absolute right-0 top-0 z-30 h-full w-[320px] bg-black/60 backdrop-blur-md border-l border-white/10">
-        {/* <Controls p={params} set={set} /> */}
+      <div className="absolute right-0 top-0 z-30 h-full w-[320px] bg-black/60 backdrop-blur-md border-l border-white/10" hidden>
       </div>
     </div>
   );
