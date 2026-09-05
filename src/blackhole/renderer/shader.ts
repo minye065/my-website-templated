@@ -182,7 +182,8 @@ float sky(vec3 rd)
 
 void main()
 {
-    vec2 uv = ((gl_FragCoord.xy - 0.5 * resolution) / resolution.y) + 0.6;
+    vec2 uv = ((gl_FragCoord.xy - 0.5 * resolution) / resolution.y);
+    uv -= vec2(0.4, 0.6)
 
     float ci = cos(inclination), si = sin(inclination);
     float ca = cos(azimuth), sa = sin(azimuth);
