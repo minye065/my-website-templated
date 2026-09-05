@@ -135,7 +135,7 @@ float diskEmission(vec3 p, vec3 rd)
     float edgeIn  = smoothstep(0.0, 0.085, t);
     float edgeOut = 1.0 - smoothstep(0.5, 1.0, t);
     float prof = pow(1.0 - t, 1.45) * edgeIn * edgeOut;
-
+ 
     float em = prof * (0.22 + 1.4 * fil);
 
     em += diskGlow * 0.9 * pow(1.0 - smoothstep(0.0, 0.22, t), 2.0) * edgeIn;
@@ -182,7 +182,7 @@ float sky(vec3 rd)
 
 void main()
 {
-    vec2 uv = ((gl_FragCoord.xy - 0.5 * resolution) / resolution.y) + 20;
+    vec2 uv = ((gl_FragCoord.xy - 0.5 * resolution) / resolution.y) + 0.6;
 
     float ci = cos(inclination), si = sin(inclination);
     float ca = cos(azimuth), sa = sin(azimuth);
