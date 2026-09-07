@@ -2,6 +2,7 @@ import { DEFAULTS, type Params } from "./params";
 import { vertexShader, fragmentShader } from './shader'
 import { checkClickAgainstMask, returnMask } from './mask'
 import { error } from "console";
+import { create } from "domain";
 
 export class BlackHoleRenderer
 {
@@ -85,7 +86,7 @@ export class BlackHoleRenderer
 		this.gl.useProgram(this.shaderProgram);
 		this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 		this.gl.uniform2f(this.cache["resolution"], this.canvas.width, this.canvas.height);
-		this.createMask();
+		this.currentMask = null;
 	}
 
 	private frameUpdate = () =>
@@ -106,6 +107,10 @@ export class BlackHoleRenderer
 		this.gl.bindVertexArray(this.vertexArray);
 		this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
 		this.gl.bindVertexArray(null);
+		if(!this.currentMask)
+		{
+			this.createMask();
+		}
 		requestAnimationFrame(this.frameUpdate);
 	}
 
@@ -117,7 +122,7 @@ export class BlackHoleRenderer
 	
 	constructor(canvas: HTMLCanvasElement, params: Params)
 	{
-		window.addEventListener("resize", this.resize.bind(this));
+		window.addEventListener("resize", this.resize);
 		this.canvas = canvas;
 		this.pparams = params;
 		const gl = canvas.getContext("webgl2");
