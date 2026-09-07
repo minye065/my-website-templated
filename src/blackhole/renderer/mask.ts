@@ -1,5 +1,3 @@
-import { input } from "motion/react-client";
-
 const neighbors = 
 [
     {x: 0, y: -1},
