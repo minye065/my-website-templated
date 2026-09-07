@@ -31,10 +31,26 @@ export default function App() {
     });
   }, []);
 
+  const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!canvasRef.current || !rendererRef.current) return;
+
+    const canvas = canvasRef.current.getBoundingClientRect();
+    const x = event.clientX - canvas.left;
+    const y = event.clientY - canvas.top;
+
+    const isInside = rendererRef.current.screenClicked(x, y, canvas.height, canvas.width);
+    if (isInside) {
+      console.log("inside");
+    } else {
+      console.log("outside");
+    }
+  };
+
   return (
     <div className="relative h-full w-full overflow-hidden">
       <canvas
         ref={canvasRef}
+        onClick={handleCanvasClick}
         className="absolute inset-0 h-full w-full touch-none"
       />
       <div className="absolute right-0 top-0 z-30 h-full w-[320px] bg-black/60 backdrop-blur-md border-l border-white/10" hidden>

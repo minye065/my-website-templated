@@ -1,5 +1,7 @@
 import { DEFAULTS, type Params } from "./params";
 import { vertexShader, fragmentShader } from './shader'
+import { checkClickAgainstMask, returnMask } from './mask'
+import { error } from "console";
 
 export class BlackHoleRenderer
 {
@@ -17,6 +19,7 @@ export class BlackHoleRenderer
 	private elapsed: number = 0;
 	private frame: number = 0;
 	private spinPhase: number = 0;
+	private currentMask: Uint8Array | null = null;
 
 	private cacheLocations()
 	{
@@ -82,6 +85,7 @@ export class BlackHoleRenderer
 		this.gl.useProgram(this.shaderProgram);
 		this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 		this.gl.uniform2f(this.cache["resolution"], this.canvas.width, this.canvas.height);
+		this.createMask();
 	}
 
 	private frameUpdate = () =>
@@ -164,4 +168,31 @@ export class BlackHoleRenderer
 		this.setParams(this.pparams);
 		this.requestAnimFrameID = requestAnimationFrame(this.frameUpdate);
 	}
+
+	createMask()
+	{
+		let amountofTotalFrames = this.canvas.width * this.canvas.height;
+		let pixelData = new Uint8Array(amountofTotalFrames * 4);
+		this.gl.readPixels(0, 0, this.canvas.width, this.canvas.height, this.gl.RGBA, this.gl.UNSIGNED_BYTE, pixelData);
+		this.currentMask = returnMask(pixelData, this.canvas.width, this.canvas.height);
+	}
+
+	screenClicked(inputX: number, inputY: number, canvasHeight: number, canvasWidth: number)
+	{
+		let result: boolean;
+		if(this.currentMask)
+		{
+			result = checkClickAgainstMask(inputX, inputY, this.currentMask, canvasHeight / 4, canvasWidth / 4);
+		}
+		else
+		{
+			return(false);
+		}
+		return(result);
+	}
+
+	// if(canvasResized)
+	// {
+	// 	returnMask
+	// }
 }
