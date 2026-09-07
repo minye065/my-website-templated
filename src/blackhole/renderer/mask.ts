@@ -35,8 +35,8 @@ export function returnMask(pixelData:Uint8Array, canvasWidth:number, canvasHeigh
             {
                 if(mask[neighborY * maskWidth + neighborX] === 0)
                 {
-                    let currentPixel = (neighborY * canvasWidth + neighborX) * step * 4;
-                    if(pixelData[currentPixel] + pixelData[currentPixel + 1]  + pixelData[currentPixel + 2] <= 150)
+                    let currentPixel = ((neighborY * step) * canvasWidth + (neighborX * step)) * 4;
+                    if(pixelData[currentPixel] + pixelData[currentPixel + 1]  + pixelData[currentPixel + 2] <= 900)
                     {
                         mask[neighborY * maskWidth + neighborX] = pixelStatus.PIXEL_DARK;
                         queue.push([neighborX, neighborY]);

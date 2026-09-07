@@ -1,9 +1,6 @@
 import { DEFAULTS, type Params } from "./params";
 import { vertexShader, fragmentShader } from './shader'
 import { checkClickAgainstMask, returnMask } from './mask'
-import { error } from "console";
-import { create } from "domain";
-
 export class BlackHoleRenderer
 {
 
@@ -187,7 +184,7 @@ export class BlackHoleRenderer
 		let result: boolean;
 		if(this.currentMask)
 		{
-			result = checkClickAgainstMask(inputX, inputY, this.currentMask, canvasHeight / 4, canvasWidth / 4);
+			result = checkClickAgainstMask(inputX, inputY, this.currentMask, canvasWidth / 4, canvasHeight / 4);
 		}
 		else
 		{
