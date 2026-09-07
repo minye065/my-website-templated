@@ -58,7 +58,7 @@ export function returnMask(pixelData:Uint8Array, canvasWidth:number, canvasHeigh
 }
 
 
-export function checkClickAgainstMask(inputX: number, inputY:number, mask: Uint8Array, maskHeight: number, maskWidth: number)
+export function checkClickAgainstMask(inputX: number, inputY:number, mask: Uint8Array, maskWidth: number, maskHeight: number)
 {
     let isInside: boolean;
     inputY = (maskHeight - 1) - Math.floor(inputY / step);
