@@ -23,6 +23,8 @@ export type Params =
   nebulosity: number;
   quality: number;
   bloom: number;
+  offsetX: number;
+  offsetY: number;
 };
 
 export const DEFAULTS: Params =
@@ -50,6 +52,8 @@ export const DEFAULTS: Params =
   nebulosity: 0.25,
   quality: 0.6,
   bloom: 0.45,
+  offsetX: 0.3,
+  offsetY: 0,
 };
 
 export type Preset =

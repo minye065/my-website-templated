@@ -46,6 +46,8 @@ export class BlackHoleRenderer
 		this.cache["nebulosity"] = this.gl.getUniformLocation(this.shaderProgram, "nebula");
 		this.cache["steps"] = this.gl.getUniformLocation(this.shaderProgram, "steps");
 		this.cache["stepScale"] = this.gl.getUniformLocation(this.shaderProgram, "stepScale");
+		this.cache["offsetX"] = this.gl.getUniformLocation(this.shaderProgram, "offsetX");
+		this.cache["offsetY"] = this.gl.getUniformLocation(this.shaderProgram, "offsetY");
 	}
 
 	setParams(params: Params)
@@ -74,6 +76,8 @@ export class BlackHoleRenderer
 		this.gl.uniform1f(this.cache["nebulosity"], params.nebulosity);
 		this.gl.uniform1f(this.cache["steps"], Math.round(110 + params.quality * 260));
 		this.gl.uniform1f(this.cache["stepScale"], 1.35 - params.quality * 0.65);
+		this.gl.uniform1f(this.cache["offsetX"], params.offsetX);
+		this.gl.uniform1f(this.cache["offsetY"], params.offsetY);
 	}
 
 	private resize = () =>

@@ -105,6 +105,7 @@ export default function Controls({
                 </button>
               );
             })}
+            <Slider label="Horizontal Offset" value={p.offsetX} min={-0.6} max={0.6} step={0.01} onChange={(v) => set({ offsetX: v })}/>
           </div>
           <Slider label="Hue" value={p.hue} min={0} max={360} step={1} digits={0} unit="°" hue onChange={(v) => set({ hue: v })} />
           <Slider label="Saturation" value={p.saturation} min={0} max={1.4} onChange={(v) => set({ saturation: v })} />

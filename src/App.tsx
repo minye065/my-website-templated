@@ -6,12 +6,14 @@ import Layer1InfoPanel from './components/Layer1InfoPanel';
 import Lightbox, { LightboxContext, type LightboxImage } from './components/Lightbox';
 import { BlackHoleRenderer } from '././blackhole/renderer/blackhole';
 import { Params, DEFAULTS } from '././blackhole/renderer/params';
+import Controls from '././components/BlackHoleControls';
 // import Controls from "./components/BlackHoleControls";
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<BlackHoleRenderer | null>(null);
   const [params, setParams] = useState<Params>(DEFAULTS);
+  const [showControls, setShowControls] = useState(false);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -22,7 +24,15 @@ export default function App() {
       rendererRef.current = null;
     };
   }, []);
-
+  useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key.toLowerCase() === 'p') {
+      setShowControls(prev => !prev);
+    }
+  };
+  window.addEventListener('keydown', handleKeyDown);
+  return () => window.removeEventListener('keydown', handleKeyDown);
+}, []);
   const set = useCallback((patch: Partial<Params>) => {
     setParams((prev) => {
       const next = { ...prev, ...patch };
@@ -53,12 +63,15 @@ export default function App() {
         onClick={handleCanvasClick}
         className="absolute inset-0 h-full w-full touch-none"
       />
-      <div className="absolute right-0 top-0 z-30 h-full w-[320px] bg-black/60 backdrop-blur-md border-l border-white/10" hidden>
-      </div>
+      
+      {showControls && (
+        <div className="absolute right-0 top-0 z-30 h-full w-[320px] bg-black/80 backdrop-blur-md border-l border-white/10 text-white">
+          <Controls p={params} set={set} />
+        </div>
+      )}
     </div>
   );
 }
-
 /*
 export default function App()
 {

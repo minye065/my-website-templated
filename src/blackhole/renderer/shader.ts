@@ -15,13 +15,11 @@ precision highp float;
 uniform vec2  resolution;
 uniform float time;
 uniform float frame;
-
 uniform float hue;
 uniform float saturation;
 uniform float drift;
 uniform float exposure;
 uniform float contrast;
-
 uniform float innerRadius;
 uniform float outerRadius;
 uniform float spin;
@@ -29,19 +27,18 @@ uniform float density;
 uniform float detail;
 uniform float doppler;
 uniform float diskGlow;
-
 uniform float inclination;
 uniform float azimuth;
 uniform float distance;
 uniform float roll;
 uniform float fieldOfView;
-
 uniform float starAmount;
 uniform float starBrightness;
 uniform float nebula;
-
 uniform float steps;
 uniform float stepScale;
+uniform float offsetX;
+uniform float offsetY;
 
 const float PI = 3.14159265359;
 
@@ -183,7 +180,7 @@ float sky(vec3 rd)
 void main()
 {
     vec2 uv = ((gl_FragCoord.xy - 0.5 * resolution) / resolution.y);
-    uv -= vec2(0.3, 0);
+    uv -= vec2(offsetX, offsetY);
 
     float ci = cos(inclination), si = sin(inclination);
     float ca = cos(azimuth), sa = sin(azimuth);
