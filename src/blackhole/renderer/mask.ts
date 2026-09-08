@@ -14,15 +14,18 @@ const enum pixelStatus
 }
 const step = 4;
 
-export function returnMask(pixelData:Uint8Array, canvasWidth:number, canvasHeight:number)
+export function returnMask(pixelData:Uint8Array, canvasWidth:number, canvasHeight:number, blackHoleFocalLength: number, BlackHoledistance:number)
 {
     let mask = new Uint8Array(canvasHeight / step * canvasWidth / step);
     let maskWidth = Math.floor(canvasWidth / step);
     let maskHeight = Math.floor(canvasHeight / step);
+    let yOffset = (((2.598 * blackHoleFocalLength / BlackHoledistance) * canvasHeight) * 0.5) / step;
     let startX = Math.floor(maskWidth * (0.5 + 0.3 * (canvasHeight / canvasWidth)));
-    let startY = Math.floor(maskHeight * 0.5)
-    let queue = [[startX, startY]];
-    mask[startY * maskWidth + startX] = pixelStatus.PIXEL_DARK;
+    let startTopY = Math.floor(maskHeight * 0.5 - yOffset) 
+    let startBottomY = Math.floor(maskHeight * 0.5 - yOffset) 
+    let queue = [[startX, startTopY], [startX, startBottomY]];
+    mask[startTopY * maskWidth + startX] = pixelStatus.PIXEL_DARK;
+    mask[startBottomY * maskWidth + startX] = pixelStatus.PIXEL_DARK;
 
     while(queue.length > 0)
     {
