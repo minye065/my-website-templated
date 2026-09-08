@@ -184,7 +184,7 @@ export class BlackHoleRenderer
 		let result: boolean;
 		if(this.currentMask)
 		{
-			result = checkClickAgainstMask(inputX, inputY, this.currentMask, canvasWidth / 4, canvasHeight / 4);
+			result = checkClickAgainstMask(inputX, inputY, this.currentMask, Math.floor(canvasWidth / 4), Math.floor(canvasHeight / 4));
 		}
 		else
 		{

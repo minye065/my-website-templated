@@ -17,8 +17,8 @@ const step = 4;
 export function returnMask(pixelData:Uint8Array, canvasWidth:number, canvasHeight:number)
 {
     let mask = new Uint8Array(canvasHeight / step * canvasWidth / step);
-    let maskWidth = canvasWidth / step;
-    let maskHeight = canvasHeight / step;
+    let maskWidth = Math.floor(canvasWidth / step);
+    let maskHeight = Math.floor(canvasHeight / step);
     let startX = Math.floor(maskWidth * (0.5 + 0.3 * (canvasHeight / canvasWidth)));
     let startY = Math.floor(maskHeight * 0.5)
     let queue = [[startX, startY]];
@@ -61,7 +61,7 @@ export function returnMask(pixelData:Uint8Array, canvasWidth:number, canvasHeigh
 export function checkClickAgainstMask(inputX: number, inputY:number, mask: Uint8Array, maskWidth: number, maskHeight: number)
 {
     let isInside: boolean;
-    inputY = (maskHeight - 1) - Math.floor(inputY / step);
+    inputY = Math.floor((maskHeight - 1) - Math.floor(inputY / step));
     inputX = Math.floor(inputX / step)
 
     if(mask[Math.floor(inputY * maskWidth + inputX)] === pixelStatus.PIXEL_DARK)
