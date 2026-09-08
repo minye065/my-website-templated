@@ -64,7 +64,7 @@ export function checkClickAgainstMask(inputX: number, inputY:number, mask: Uint8
     inputY = (maskHeight - 1) - Math.floor(inputY / step);
     inputX = Math.floor(inputX / step)
 
-    if(mask[inputY * maskWidth + inputX] === pixelStatus.PIXEL_DARK)
+    if(mask[Math.floor(inputY * maskWidth + inputX)] === pixelStatus.PIXEL_DARK)
     {
         isInside = true;
     }
@@ -72,6 +72,6 @@ export function checkClickAgainstMask(inputX: number, inputY:number, mask: Uint8
     {
         isInside = false;
     }
-    console.log(mask[inputY * maskWidth + inputX])
+    console.log(mask[Math.floor(inputY * maskWidth + inputX)])
     return(isInside)
 }
