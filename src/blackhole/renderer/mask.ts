@@ -14,52 +14,25 @@ const enum pixelStatus
 }
 const step = 4;
 
-export function returnMask(pixelData:Uint8Array, canvasWidth:number, canvasHeight:number, blackHoleFocalLength: number, BlackHoledistance:number)
-{
-    let maskWidth = Math.floor(canvasWidth / step);
-    let maskHeight = Math.floor(canvasHeight / step);
-    let mask = new Uint8Array(maskWidth * maskHeight);
-    let yOffset = (((2.598 * blackHoleFocalLength / BlackHoledistance) * canvasHeight) * 0.5) / step;
-    let startX = Math.floor(maskWidth * (0.5 + 0.3 * (canvasHeight / canvasWidth)));
-    let startTopY = Math.floor(maskHeight * 0.5 + yOffset) 
-    let startBottomY = Math.floor(maskHeight * 0.5 - yOffset) 
-    let queue = [[startX, startTopY], [startX, startBottomY]];
-    mask[startTopY * maskWidth + startX] = pixelStatus.PIXEL_DARK;
-    mask[startBottomY * maskWidth + startX] = pixelStatus.PIXEL_DARK;
-
-    while(queue.length > 0)
-    {
-        let [x,y] = queue.shift()!;
-        for(let i = 0; i < neighbors.length; i++)
-        {
-            let neighborX = x + neighbors[i].x;
-            let neighborY = y + neighbors[i].y;                    
-            if(0 <= neighborX && neighborX < maskWidth && 0 <= neighborY && neighborY < maskHeight)
-            {
-                if(mask[neighborY * maskWidth + neighborX] === 0)
-                {
-                    let currentPixel = ((neighborY * step) * canvasWidth + (neighborX * step)) * 4;
-                    if(pixelData[currentPixel] + pixelData[currentPixel + 1]  + pixelData[currentPixel + 2] <= 100)
-                    {
-                        mask[neighborY * maskWidth + neighborX] = pixelStatus.PIXEL_DARK;
-                        queue.push([neighborX, neighborY]);
-                    }
-                    else/*if(pixelData[currentPixel] + pixelData[currentPixel + 1]  + pixelData[currentPixel + 2] >= 30)*/
-                    {
-                        mask[neighborY * maskWidth + neighborX] = pixelStatus.PIXEL_NOT_DARK;
-                    }
-                    // else
-                    // {
-                    //     mask[neighborY * maskWidth + neighborX] = pixelStatus.PIXEL_VOID;
-                    //     queue.push([neighborX, neighborY]);
-                    // }
-                }
+export function returnMask(pixelData: Uint8Array, canvasWidth: number, canvasHeight: number) {
+    const maskWidth = Math.floor(canvasWidth / step);
+    const maskHeight = Math.floor(canvasHeight / step);
+    const mask = new Uint8Array(maskWidth * maskHeight);
+    for (let y = 0; y < maskHeight; y++) {
+        for (let x = 0; x < maskWidth; x++) {
+            const pixelX = x * step;
+            const pixelY = y * step;
+            const currentPixel = (pixelY * canvasWidth + pixelX) * 4;
+            const alphaValue = pixelData[currentPixel + 3];
+            if (alphaValue < 128) {
+                mask[y * maskWidth + x] = pixelStatus.PIXEL_DARK;
+            } else {
+                mask[y * maskWidth + x] = pixelStatus.PIXEL_NOT_DARK;
             }
         }
     }
-    return(mask);
+    return mask;
 }
-
 
 export function checkClickAgainstMask(inputX: number, inputY:number, mask: Uint8Array, maskWidth: number, maskHeight: number)
 {

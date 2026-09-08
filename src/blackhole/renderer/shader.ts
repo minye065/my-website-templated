@@ -234,5 +234,5 @@ void main()
     }
     if (!captured) bright += sky(rd);
     bright = pow(max(bright * exposure, 0.0), contrast);
-    fragColor = vec4(ramp(bright), 1.0);
+    fragColor = vec4(ramp(bright), captured ? 0.0 : 1.0);
 }`
