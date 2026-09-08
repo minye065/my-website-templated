@@ -176,7 +176,7 @@ export class BlackHoleRenderer
 		let amountofTotalFrames = this.canvas.width * this.canvas.height;
 		let pixelData = new Uint8Array(amountofTotalFrames * 4);
 		this.gl.readPixels(0, 0, this.canvas.width, this.canvas.height, this.gl.RGBA, this.gl.UNSIGNED_BYTE, pixelData);
-		this.currentMask = returnMask(pixelData, this.canvas.width, this.canvas.height);
+		this.currentMask = returnMask(pixelData, this.canvas.width, this.canvas.height, this.pparams.focalLength, this.pparams.distance);
 	}
 
 	screenClicked(inputX: number, inputY: number, canvasHeight: number, canvasWidth: number)
