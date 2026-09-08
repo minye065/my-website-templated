@@ -72,5 +72,6 @@ export function checkClickAgainstMask(inputX: number, inputY:number, mask: Uint8
     {
         isInside = false;
     }
+    console.log(mask[inputY * maskWidth + inputX])
     return(isInside)
 }
