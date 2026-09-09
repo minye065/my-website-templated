@@ -44,7 +44,7 @@ export const DEFAULTS: Params =
   inclination: 7,
   azimuth: 20,
   distance: 25,
-  roll: -25,
+  roll: -28,
   focalLength: 1.7,
   autoRotate: 0.35,
   starAmount: 0.55,
@@ -52,7 +52,7 @@ export const DEFAULTS: Params =
   nebulosity: 0.25,
   quality: 0.6,
   bloom: 0.45,
-  offsetX: 0.3,
+  offsetX: -0.002,
   offsetY: 0,
 };
 
