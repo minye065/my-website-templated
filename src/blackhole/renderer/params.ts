@@ -70,9 +70,6 @@ export const PRESETS: Preset[] =
   { name: "Amber", hue: 27, sat: 1.0, drift: 8, swatch: "#e07a1f" },
   { name: "Carmine", hue: 340, sat: 1.0, drift: 12, swatch: "#c2103f" },
   { name: "Ember", hue: 8, sat: 1.05, drift: 14, swatch: "#d63a17" },
-  { name: "Solar", hue: 46, sat: 1.0, drift: 6, swatch: "#e8b021" },
-  { name: "Verdant", hue: 142, sat: 0.9, drift: -14, swatch: "#17a85e" },
-  { name: "Cyan", hue: 188, sat: 0.95, drift: -12, swatch: "#12aec4" },
   { name: "Ion", hue: 268, sat: 0.9, drift: 22, swatch: "#8a4fd8" },
   { name: "Bone", hue: 32, sat: 0.14, drift: 0, swatch: "#cfc4b6" },
 ];
