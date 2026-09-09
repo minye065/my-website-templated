@@ -7,7 +7,6 @@ import Lightbox, { LightboxContext, type LightboxImage } from './components/Ligh
 import { BlackHoleRenderer } from '././blackhole/renderer/blackhole';
 import { Params, DEFAULTS } from '././blackhole/renderer/params';
 import Controls from '././components/BlackHoleControls';
-// import Controls from "./components/BlackHoleControls";
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -48,7 +47,7 @@ export default function App() {
     const x = event.clientX - canvas.left;
     const y = event.clientY - canvas.top;
 
-    const isInside = rendererRef.current.screenClicked(x, y, canvas.height, canvas.width);
+    const isInside = rendererRef.current.screenClicked(x, y);
     if (isInside) {
       console.log("inside");
     } else {
@@ -66,7 +65,7 @@ export default function App() {
       
       {showControls && (
         <div className="absolute right-0 top-0 z-30 h-full w-[320px] bg-black/80 backdrop-blur-md border-l border-white/10 text-white">
-          <Controls p={params} set={set} />
+          <Controls p={params} set={set} onClose={() => setShowControls(false)} />
         </div>
       )}
     </div>
