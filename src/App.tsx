@@ -64,7 +64,7 @@ export default function App() {
       />
       
       {showControls && (
-        <div className="absolute right-0 top-0 z-30 h-full w-[320px] bg-black/80 backdrop-blur-md border-l border-white/10 text-white">
+        <div className="absolute right-0 top-0 z-30 h-full w-[320px]">
           <Controls p={params} set={set} onClose={() => setShowControls(false)} />
         </div>
       )}
