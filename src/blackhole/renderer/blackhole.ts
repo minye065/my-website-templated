@@ -119,7 +119,7 @@ export class BlackHoleRenderer
 		window.addEventListener("resize", this.resize);
 		this.canvas = canvas;
 		this.pparams = params;
-		const gl = canvas.getContext("webgl2");
+		const gl = canvas.getContext("webgl2", { preserveDrawingBuffer: true });
 		if(gl == null)
 		{
 			throw new Error("failed to get context for webgl2");
