@@ -45,7 +45,7 @@ export default function StarMap({ active }: { active: boolean })
   const keysPressed = useRef<Set<string>>(new Set());
 
   useEffect(() =>
-    {
+  {
     loadNasaBackground(() => {
       dirty.current = true;
     });
@@ -56,7 +56,7 @@ export default function StarMap({ active }: { active: boolean })
   }, []);
 
   useEffect(() =>
-    {
+  {
     const el = wrapRef.current;
     const cv = canvasRef.current;
     if (!el || !cv) return;
@@ -110,10 +110,10 @@ export default function StarMap({ active }: { active: boolean })
       {
         let dx = 0;
         let dy = 0;
-        if (keysPressed.current.has('w')) dy += 1;
-        if (keysPressed.current.has('s')) dy -= 1;
-        if (keysPressed.current.has('a')) dx += 1;
-        if (keysPressed.current.has('d')) dx -= 1;
+        if (keysPressed.current.has('w')) dy -= 4;
+        if (keysPressed.current.has('s')) dy += 4;
+        if (keysPressed.current.has('a')) dx += 4;
+        if (keysPressed.current.has('d')) dx -= 4;
 
         if (dx !== 0 || dy !== 0)
         {
