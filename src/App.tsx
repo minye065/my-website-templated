@@ -44,7 +44,8 @@ export default function App()
   //   return () => window.removeEventListener('keydown', onKey);
   // }, [lightbox, showPanel]);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     if (!canvasRef.current) return;
     const renderer = new BlackHoleRenderer(canvasRef.current, DEFAULTS);
     rendererRef.current = renderer;
@@ -52,30 +53,33 @@ export default function App()
       renderer.dispose();
       rendererRef.current = null;
     };
-  }, []);
+  }, [currentSiteState]);
   useEffect(() => {
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key.toLowerCase() === 'p') {
+  const handleKeyDown = (e: KeyboardEvent) =>
+  {
+    if (e.key.toLowerCase() === 'p')
+    {
       setShowControls(prev => !prev);
     }
   };
   window.addEventListener('keydown', handleKeyDown);
   return () => window.removeEventListener('keydown', handleKeyDown);
 }, []);
-  const set = useCallback((patch: Partial<Params>) => {
-    setParams((prev) => {
+  const set = useCallback((patch: Partial<Params>) =>
+  {
+    setParams((prev) =>
+    {
       const next = { ...prev, ...patch };
       rendererRef.current?.setParams(next);
       return next;
     });
   }, []);
-  const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) =>
+  {
     if (!canvasRef.current || !rendererRef.current) return;
-
     const canvas = canvasRef.current.getBoundingClientRect();
     const x = event.clientX - canvas.left;
     const y = event.clientY - canvas.top;
-
     const isInside = rendererRef.current.screenClicked(x, y);
     if (isInside)
     {
