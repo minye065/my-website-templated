@@ -7,18 +7,21 @@ import { clamp, makeView, updateView, wrapLon } from '../lib/sky';
 import InfoPanel from './InfoPanel';
 import TourCard from './TourCard';
 
-const LAYER_LABELS: { key: keyof Layers; label: string }[] = [
+const LAYER_LABELS: { key: keyof Layers; label: string }[] =
+[
   { key: 'deepSky', label: 'Deep sky' },
   { key: 'labels', label: 'Labels' },
 ];
 
-interface SearchHit {
+interface SearchHit
+{
   label: string;
   sub: string;
   sel: Selection;
 }
 
-export default function StarMap({ active }: { active: boolean }) {
+export default function StarMap({ active }: { active: boolean })
+{
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const viewRef = useRef(makeView());
@@ -38,10 +41,11 @@ export default function StarMap({ active }: { active: boolean }) {
   layersRef.current = layers;
   const activeRef = useRef(active);
   activeRef.current = active;
-
   const info = useMemo(() => (selected ? buildInfo(selected) : null), [selected]);
+  const keysPressed = useRef<Set<string>>(new Set());
 
-  useEffect(() => {
+  useEffect(() =>
+    {
     loadNasaBackground(() => {
       dirty.current = true;
     });
@@ -51,7 +55,8 @@ export default function StarMap({ active }: { active: boolean }) {
     return () => window.clearTimeout(id);
   }, []);
 
-  useEffect(() => {
+  useEffect(() =>
+    {
     const el = wrapRef.current;
     const cv = canvasRef.current;
     if (!el || !cv) return;
@@ -60,7 +65,7 @@ export default function StarMap({ active }: { active: boolean }) {
       const v = viewRef.current;
       v.w = Math.max(1, r.width);
       v.h = Math.max(1, r.height);
-      v.dpr = Math.min(window.devicePixelRatio || 1, 2);
+      v.dpr = Math.min(window.devicePixelRatio || 1, 1.35);
       cv.width = Math.round(v.w * v.dpr);
       cv.height = Math.round(v.h * v.dpr);
       cv.style.width = `${v.w}px`;
@@ -72,7 +77,8 @@ export default function StarMap({ active }: { active: boolean }) {
     return () => ro.disconnect();
   }, []);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     let raf = 0;
     let pulseTick = 0;
     let last = 0;
@@ -82,7 +88,8 @@ export default function StarMap({ active }: { active: boolean }) {
       last = t;
       const v = viewRef.current;
 
-      if (anim.current) {
+      if (anim.current)
+        {
         const a = anim.current;
         const k = clamp((t - a.t0) / a.dur, 0, 1);
         const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
@@ -92,13 +99,37 @@ export default function StarMap({ active }: { active: boolean }) {
         updateView(v);
         dirty.current = true;
         if (k >= 1) anim.current = null;
-      } else if (!activeRef.current) {
+      }
+      else if (!activeRef.current)
+      {
         v.ra = wrapLon(v.ra + dt * 0.00008 * v.fov);
         updateView(v);
         dirty.current = true;
       }
+      if (activeRef.current && keysPressed.current.size > 0)
+      {
+        let dx = 0;
+        let dy = 0;
+        if (keysPressed.current.has('w')) dy += 1;
+        if (keysPressed.current.has('s')) dy -= 1;
+        if (keysPressed.current.has('a')) dx += 1;
+        if (keysPressed.current.has('d')) dx -= 1;
 
-      if (selRef.current && t - pulseTick > 70) {
+        if (dx !== 0 || dy !== 0)
+        {
+          const len = Math.hypot(dx, dy);
+          const ndx = dx / len;
+          const ndy = dy / len;
+          const moveSpeed = 0.0006 * dt * v.fov;
+          v.ra = wrapLon(v.ra - ndx * moveSpeed);
+          v.dec = clamp(v.dec - ndy * moveSpeed, -88, 88);
+          updateView(v);
+          dirty.current = true;
+        }
+      }
+
+      if (selRef.current && t - pulseTick > 70)
+      {
         pulseTick = t;
         dirty.current = true;
       }
@@ -112,11 +143,57 @@ export default function StarMap({ active }: { active: boolean }) {
     return () => cancelAnimationFrame(raf);
   }, [ready]);
 
-  useEffect(() => {
+  useEffect(() =>
+    {
     dirty.current = true;
   }, [layers, selected]);
 
-  const panPixels = useCallback((dx: number, dy: number) => {
+    useEffect(() =>
+    {
+      if (!active)
+      {
+        keysPressed.current.clear();
+        return;
+      }
+
+      const handleKeyDown = (e: KeyboardEvent) =>
+      {
+        if (document.activeElement?.tagName === 'INPUT') return;
+        const key = e.key.toLowerCase();
+        if (['w', 'a', 's', 'd'].includes(key))
+        {
+          keysPressed.current.add(key);
+          anim.current = null;
+        }
+        else if (key === '+' || key === '=')
+        {
+          smoothZoom(0.66);
+        }
+        else if (key === '-')
+        {
+          smoothZoom(1.5);
+        }
+      };
+
+      const handleKeyUp = (e: KeyboardEvent) =>
+      {
+        const key = e.key.toLowerCase();
+        if (['w', 'a', 's', 'd'].includes(key))
+        {
+          keysPressed.current.delete(key);
+        }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('keyup', handleKeyUp);
+    return () =>
+    {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      keysPressed.current.clear();
+    };
+  }, [active]);
+  const panPixels = useCallback((dx: number, dy: number) =>
+  {
     const v = viewRef.current;
     v.ra -= dx / v.scale;
     v.dec += dy / v.scale;
@@ -124,13 +201,16 @@ export default function StarMap({ active }: { active: boolean }) {
     dirty.current = true;
   }, []);
 
-  const zoomAt = useCallback(
-    (factor: number, mx?: number, my?: number) => {
+  const zoomAt = useCallback
+  (
+    (factor: number, mx?: number, my?: number) =>
+    {
       const v = viewRef.current;
       const before = v.fov;
       v.fov = clamp(v.fov * factor, 0.4, 175);
       updateView(v);
-      if (mx != null && my != null && before !== v.fov) {
+      if (mx != null && my != null && before !== v.fov)
+      {
         const f = 1 - before / v.fov;
         panPixels((mx - v.cx) * f, (my - v.cy) * f);
       }
@@ -140,9 +220,11 @@ export default function StarMap({ active }: { active: boolean }) {
     [panPixels],
   );
 
-  const flyTo = useCallback((ra: number, dec: number, fov: number, dur = 900) => {
+  const flyTo = useCallback((ra: number, dec: number, fov: number, dur = 900) =>
+  {
     const v = viewRef.current;
-    anim.current = {
+    anim.current =
+    {
       t0: performance.now(),
       dur,
       from: [v.ra, v.dec, v.fov],
@@ -150,11 +232,22 @@ export default function StarMap({ active }: { active: boolean }) {
     };
   }, []);
 
-  useEffect(() => {
+  const smoothZoom = useCallback((factor: number) =>
+  {
+    const v = viewRef.current;
+    const targetFov = clamp(v.fov * factor, 0.4, 175);
+    const targetRa = anim.current ? anim.current.to[0] : v.ra;
+    const targetDec = anim.current ? anim.current.to[1] : v.dec;
+    flyTo(targetRa, targetDec, targetFov, 220);
+  }, [flyTo]);
+
+  useEffect(() =>
+  {
     if (active) return;
     const pool = CATALOG.dsos.map((d, i) => ({ d, i })).filter((x) => x.d.name && x.d.mag < 9.5);
     let idx = Math.floor(Math.random() * pool.length);
-    const go = () => {
+    const go = () =>
+    {
       const { d, i } = pool[idx];
       flyTo(d.ra, d.dec, 40, 4000);
       setSelected({ kind: 'dso', index: i });
@@ -162,13 +255,15 @@ export default function StarMap({ active }: { active: boolean }) {
     };
     const t0 = window.setTimeout(go, 1200);
     const t = window.setInterval(go, 14000);
-    return () => {
+    return () =>
+    {
       window.clearTimeout(t0);
       window.clearInterval(t);
     };
   }, [active, flyTo]);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     anim.current = null;
     setSelected(null);
     setQuery('');
@@ -178,7 +273,8 @@ export default function StarMap({ active }: { active: boolean }) {
     }
   }, [active, flyTo]);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     const cv = canvasRef.current;
     if (!cv || !active) return;
     let dragging = false;
@@ -188,12 +284,14 @@ export default function StarMap({ active }: { active: boolean }) {
     const pinch = new Map<number, { x: number; y: number }>();
     let pinchDist = 0;
 
-    const local = (e: PointerEvent) => {
+    const local = (e: PointerEvent) =>
+    {
       const r = cv.getBoundingClientRect();
       return { x: e.clientX - r.left, y: e.clientY - r.top };
     };
 
-    const down = (e: PointerEvent) => {
+    const down = (e: PointerEvent) =>
+    {
       cv.setPointerCapture(e.pointerId);
       const p = local(e);
       pinch.set(e.pointerId, p);
@@ -203,10 +301,12 @@ export default function StarMap({ active }: { active: boolean }) {
       lastY = p.y;
       anim.current = null;
     };
-    const move = (e: PointerEvent) => {
+    const move = (e: PointerEvent) =>
+    {
       const p = local(e);
       if (pinch.has(e.pointerId)) pinch.set(e.pointerId, p);
-      if (pinch.size === 2) {
+      if (pinch.size === 2)
+      {
         const [a, b] = [...pinch.values()];
         const d = Math.hypot(a.x - b.x, a.y - b.y);
         if (pinchDist) zoomAt(pinchDist / d, (a.x + b.x) / 2, (a.y + b.y) / 2);
@@ -221,18 +321,21 @@ export default function StarMap({ active }: { active: boolean }) {
       moved += Math.abs(dx) + Math.abs(dy);
       panPixels(dx, dy);
     };
-    const up = (e: PointerEvent) => {
+    const up = (e: PointerEvent) =>
+    {
       pinch.delete(e.pointerId);
       if (pinch.size < 2) pinchDist = 0;
       if (!dragging) return;
       dragging = false;
-      if (moved < 5) {
+      if (moved < 5)
+      {
         const p = local(e);
         const hit = pick(viewRef.current, p.x, p.y, layersRef.current);
         setSelected(hit);
       }
     };
-    const wheel = (e: WheelEvent) => {
+    const wheel = (e: WheelEvent) =>
+    {
       e.preventDefault();
       const r = cv.getBoundingClientRect();
       zoomAt(Math.exp(e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top);
@@ -243,7 +346,8 @@ export default function StarMap({ active }: { active: boolean }) {
     cv.addEventListener('pointerup', up);
     cv.addEventListener('pointercancel', up);
     cv.addEventListener('wheel', wheel, { passive: false });
-    return () => {
+    return () =>
+    {
       cv.removeEventListener('pointerdown', down);
       cv.removeEventListener('pointermove', move);
       cv.removeEventListener('pointerup', up);
@@ -252,11 +356,13 @@ export default function StarMap({ active }: { active: boolean }) {
     };
   }, [active, panPixels, zoomAt]);
 
-  const hits = useMemo<SearchHit[]>(() => {
+  const hits = useMemo<SearchHit[]>(() =>
+  {
     const q = query.trim().toLowerCase();
     if (q.length < 1) return [];
     const out: SearchHit[] = [];
-    CATALOG.dsos.forEach((d, i) => {
+    CATALOG.dsos.forEach((d, i) =>
+    {
       const hay = `${d.desig} ${d.name ?? ''}`.toLowerCase();
       if (hay.includes(q)) out.push({ label: d.desig, sub: d.con, sel: { kind: 'dso', index: i } });
     });
@@ -264,8 +370,10 @@ export default function StarMap({ active }: { active: boolean }) {
     return out.slice(0, 8);
   }, [query]);
 
-  const goTo = useCallback(
-    (sel: Selection) => {
+  const goTo = useCallback
+  (
+    (sel: Selection) =>
+    {
       const i = buildInfo(sel);
       setSelected(sel);
       flyTo(i.ra, i.dec, i.fov, 1100);
@@ -273,7 +381,7 @@ export default function StarMap({ active }: { active: boolean }) {
     [flyTo],
   );
 
-  return (
+  return(
     <div ref={wrapRef} className="relative h-full w-full bg-[#03040a]">
       <canvas
         ref={canvasRef}
@@ -337,10 +445,10 @@ export default function StarMap({ active }: { active: boolean }) {
 
             <div className="pointer-events-auto absolute right-3 bottom-3 flex items-center gap-2">
               <div className="flex overflow-hidden rounded-md border border-white/10 bg-black/50 backdrop-blur-md">
-                <button onClick={() => zoomAt(0.66)} className="px-2.5 py-1 text-white/70 hover:bg-white/10 hover:text-white">
+                <button onClick={() => smoothZoom(0.66)} className="px-2.5 py-1 text-white/70 hover:bg-white/10 hover:text-white">
                   +
                 </button>
-                <button onClick={() => zoomAt(1.5)} className="px-2.5 py-1 text-white/70 hover:bg-white/10 hover:text-white">
+                <button onClick={() => smoothZoom(1.5)} className="px-2.5 py-1 text-white/70 hover:bg-white/10 hover:text-white">
                   −
                 </button>
               </div>
