@@ -12,7 +12,11 @@ export class BlackHoleRenderer
 	private buffer: WebGLBuffer;
 	private cache: Record<string, WebGLUniformLocation | null> = {};
 	private lastTime: number = performance.now();
-	private requestAnimFrameID:number = 0;
+	private requestAnimFrameID:number | null = null;
+	private isActive = true;
+	private isDisposed = false;
+	private vertexShader: WebGLShader | null = null;
+	private fragmentShader: WebGLShader | null = null;
 	private elapsed: number = 0;
 	private frame: number = 0;
 	private spinPhase: number = 0;
@@ -50,6 +54,7 @@ export class BlackHoleRenderer
 
 	setParams(params: Params)
 	{
+		if(this.isDisposed) return;
 		const DEG = Math.PI / 180;
 		this.gl.useProgram(this.shaderProgram);
 
@@ -87,31 +92,83 @@ export class BlackHoleRenderer
 		this.gl.uniform2f(this.cache["resolution"], this.canvas.width, this.canvas.height);
 	}
 
+	private scheduleFrame = () =>
+	{
+		if(this.isDisposed || !this.isActive || this.requestAnimFrameID  !== null) return;
+		this.requestAnimFrameID = requestAnimationFrame(this.frameUpdate);
+	}
+
 	private frameUpdate = () =>
 	{
+		this.requestAnimFrameID = null;
+		if (this.isDisposed || !this.isActive || this.gl.isContextLost()) return;
+
 		let currentIterationTime = performance.now();
-		let deltaTime = (currentIterationTime - this.lastTime) / 1000;
+		let deltaTime = Math.min(Math.max((currentIterationTime - this.lastTime) / 1000, 0), 0.05);
 		this.elapsed += deltaTime;
-		this.gl.uniform1f(this.cache["time"], this.elapsed);
 		this.lastTime = currentIterationTime;
-		this.frame += 1;
+
 		this.gl.useProgram(this.shaderProgram);
+		this.gl.uniform1f(this.cache["time"], this.elapsed);
+		this.frame += 1;
 		this.gl.uniform1f(this.cache["frame"], this.frame % 64);
+
 		if(this.pparams.autoRotate != 0)
 		{
 			this.spinPhase += deltaTime * this.pparams.autoRotate * 2.2 * (Math.PI / 180);
 		}
 		this.gl.uniform1f(this.cache["azimuth"], this.pparams.azimuth * (Math.PI / 180) + this.spinPhase);
+
 		this.gl.bindVertexArray(this.vertexArray);
 		this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
 		this.gl.bindVertexArray(null);
-		requestAnimationFrame(this.frameUpdate);
+
+		this.scheduleFrame();
 	}
+
+	setActive(active: boolean)
+	{
+		if (this.isDisposed || this.isActive === active) return;
+		this.isActive = active;
+
+		if (!active)
+		{
+			if (this.requestAnimFrameID !== null)
+			{
+				cancelAnimationFrame(this.requestAnimFrameID);
+				this.requestAnimFrameID = null;
+			}
+			return;
+		}
+
+		this.lastTime = performance.now();
+		this.resize();
+		this.scheduleFrame();
+	}
+
 
 	dispose()
 	{
-		cancelAnimationFrame(this.requestAnimFrameID);
-		window.removeEventListener("resize", this.resize)
+		if (this.isDisposed) return;
+		this.isDisposed = true;
+		this.isActive = false;
+
+		if (this.requestAnimFrameID !== null)
+		{
+			cancelAnimationFrame(this.requestAnimFrameID);
+			this.requestAnimFrameID = null;
+		}
+
+		window.removeEventListener("resize", this.resize);
+
+		this.gl.useProgram(null);
+		this.gl.bindVertexArray(null);
+
+		if (this.buffer) this.gl.deleteBuffer(this.buffer);
+		if (this.vertexArray) this.gl.deleteVertexArray(this.vertexArray);
+		if (this.vertexShader) this.gl.deleteShader(this.vertexShader);
+		if (this.fragmentShader) this.gl.deleteShader(this.fragmentShader);
+		if (this.shaderProgram) this.gl.deleteProgram(this.shaderProgram);
 	}
 	
 	constructor(canvas: HTMLCanvasElement, params: Params)
@@ -136,6 +193,8 @@ export class BlackHoleRenderer
 		this.gl.shaderSource(fshader, fragmentShader);
 		this.gl.compileShader(vshader);
 		this.gl.compileShader(fshader);
+		this.vertexShader = vshader;
+		this.fragmentShader = fshader;
 		if((this.gl.getShaderParameter(vshader, this.gl.COMPILE_STATUS) == false))
 		{
 			throw new Error(this.gl.getShaderInfoLog(vshader) + "shaders failed to compile");
@@ -165,20 +224,25 @@ export class BlackHoleRenderer
 		this.gl.bindVertexArray(null);
 		this.resize();
 		this.setParams(this.pparams);
-		this.requestAnimFrameID = requestAnimationFrame(this.frameUpdate);
+		this.scheduleFrame();
 	}
 	screenClicked(inputX: number, inputY: number)
 	{
-		const pixelX = Math.floor(inputX);
-		const pixelY = Math.floor(this.canvas.height - 1 - inputY);
+		const rect = this.canvas.getBoundingClientRect();
+		if (!this.isActive || this.gl.isContextLost() || rect.width <= 0 || rect.height <= 0)
+		{
+			return false;
+		}
+
+		const pixelX = Math.floor((inputX / rect.width) * this.canvas.width);
+		const pixelY = this.canvas.height - 1 - Math.floor((inputY / rect.height) * this.canvas.height);
+		if (pixelX < 0 || pixelX >= this.canvas.width || pixelY < 0 || pixelY >= this.canvas.height)
+		{
+			return false;
+		}
+
 		const rgba = new Uint8Array(4);
 		this.gl.readPixels(pixelX, pixelY, 1, 1, this.gl.RGBA, this.gl.UNSIGNED_BYTE, rgba);
-		const isInside = rgba[3] < 128;
-		return isInside;
+		return rgba[3] < 128;
 	}
-
-	// if(canvasResized)
-	// {
-	// 	returnMask
-	// }
 }
