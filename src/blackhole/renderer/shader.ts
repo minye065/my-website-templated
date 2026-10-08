@@ -127,10 +127,10 @@ float diskEmission(vec3 p, vec3 rd)
     float n1 = fbm(q);
     float n2 = fbm(q * 2.75 + vec3(11.3, 5.1, 2.2));
     float fil = mix(n1, n1 * n2 * 2.0, 0.55);
-    fil = pow(clamp(fil * 1.55, 0.0, 1.7), mix(0.85, 2.8, density));
+    fil = pow(clamp(fil * 1.55, 0.0, 1.7), mix(1.4, 3.2, density));
 
-    float edgeIn  = smoothstep(0.0, 0.085, t);
-    float edgeOut = 1.0 - smoothstep(0.5, 1.0, t);
+    float edgeIn  = smoothstep(0.0, 0.035, t);
+    float edgeOut = 1.0 - smoothstep(0.65, 0.92, t);
     float prof = pow(1.0 - t, 1.45) * edgeIn * edgeOut;
  
     float em = prof * (0.22 + 1.4 * fil);
@@ -226,10 +226,13 @@ void main()
         if (prev.y * pos.y < 0.0)
         {
             float k = prev.y / (prev.y - pos.y);
-            bright += diskEmission(mix(prev, pos, k), rd);
+            float em = diskEmission(mix(prev, pos, k), rd);
+            float alpha = clamp(em * 1.6, 0.0, 1.0); // tune multiplier to taste
+            bright += transmittance * em;
+            transmittance *= (1.0 - alpha);
         }
     }
-    if (!captured) bright += sky(rd);
+    if (!captured) bright += transmittance * sky(rd);
     bright = pow(max(bright * exposure, 0.0), contrast);
     fragColor = vec4(ramp(bright), 1.0);
 }`
