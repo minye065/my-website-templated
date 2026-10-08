@@ -201,6 +201,7 @@ void main()
 
     float bright = 0.0;
     bool captured = false;
+    float transmittance = 1.0;
 
     float jitter = hash13(vec3(gl_FragCoord.xy, frame));
     int totalSteps = int(steps);
