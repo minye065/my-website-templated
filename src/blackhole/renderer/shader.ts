@@ -213,7 +213,7 @@ void main()
 
         float rr = dot(pos, pos);
         float r = sqrt(rr);
-        if (r < 1.0) { captured = true; break; }
+        if (r < 1.0) { captured = true; bright = 0.0; break; }
         if (r > 55.0 && dot(pos, rd) > 0.0) break;
 
         float dt = clamp(r * 0.075 * stepScale, 0.018, 1.4);
@@ -228,7 +228,7 @@ void main()
         {
             float k = prev.y / (prev.y - pos.y);
             float em = diskEmission(mix(prev, pos, k), rd);
-            float alpha = clamp(em * 1.6, 0.0, 1.0); // tune multiplier to taste
+            float alpha = clamp(em * 2.2, 0.0, 1.0);
             bright += transmittance * em;
             transmittance *= (1.0 - alpha);
         }
