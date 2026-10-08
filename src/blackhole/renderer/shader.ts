@@ -228,7 +228,7 @@ void main()
         {
             float k = prev.y / (prev.y - pos.y);
             float em = diskEmission(mix(prev, pos, k), rd);
-            float alpha = clamp(em * 2.2, 0.0, 1.0);
+            float alpha = clamp(em * 2.3, 0.0, 1.0);
             bright += transmittance * em;
             transmittance *= (1.0 - alpha);
         }
