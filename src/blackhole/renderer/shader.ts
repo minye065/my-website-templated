@@ -39,6 +39,7 @@ uniform float steps;
 uniform float stepScale;
 uniform float offsetX;
 uniform float offsetY;
+uniform float clickPass;
 
 const float PI = 3.14159265359;
 
@@ -232,6 +233,12 @@ void main()
             bright += transmittance * em;
             transmittance *= (1.0 - alpha);
         }
+    }
+
+    if(clickPass > 0.5)
+    {
+        fragColor = vec4(captured ? 1.0 : 0.0, 0.0, 0.0, 1.0);
+        return;
     }
     if (!captured) bright += transmittance * sky(rd);
     bright = pow(max(bright * exposure, 0.0), contrast);
