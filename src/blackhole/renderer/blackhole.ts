@@ -55,12 +55,13 @@ export class BlackHoleRenderer
 		this.cache["stepScale"] = this.gl.getUniformLocation(this.shaderProgram, "stepScale");
 		this.cache["offsetX"] = this.gl.getUniformLocation(this.shaderProgram, "offsetX");
 		this.cache["offsetY"] = this.gl.getUniformLocation(this.shaderProgram, "offsetY");
-		this.uclickPass = this.gl.getUniformLocation(this.shaderProgram, 'pickPass');
+		this.uclickPass = this.gl.getUniformLocation(this.shaderProgram, "clickPass");
 	}
 
 	setParams(params: Params)
 	{
 		if(this.isDisposed) return;
+		this.pparams = { ...params };
 		const DEG = Math.PI / 180;
 		this.gl.useProgram(this.shaderProgram);
 
@@ -124,15 +125,11 @@ export class BlackHoleRenderer
 			this.spinPhase += deltaTime * this.pparams.autoRotate * 2.2 * (Math.PI / 180);
 		}
 		this.gl.uniform1f(this.cache["azimuth"], this.pparams.azimuth * (Math.PI / 180) + this.spinPhase);
-
-		this.gl.bindVertexArray(this.vertexArray);
-		this.gl.drawArrays(this.gl.TRIANGLE_STRIP, 0, 4);
-		this.gl.bindVertexArray(null);
 		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
 		this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
+		this.gl.disable(this.gl.SCISSOR_TEST);
 		this.gl.uniform1f(this.uclickPass, 0);
 		this.drawFullscreen();
-
 		this.scheduleFrame();
 	}
 	private ensurePickTarget(): void
@@ -166,7 +163,8 @@ export class BlackHoleRenderer
 		const gl = this.gl;
 		gl.useProgram(this.shaderProgram);
 		gl.bindVertexArray(this.vertexArray);
-		gl.drawArrays(gl.TRIANGLES, 0, 6);
+		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+		gl.bindVertexArray(null);
 	}
 	setActive(active: boolean)
 	{
@@ -211,6 +209,10 @@ export class BlackHoleRenderer
 		if (this.vertexShader) this.gl.deleteShader(this.vertexShader);
 		if (this.fragmentShader) this.gl.deleteShader(this.fragmentShader);
 		if (this.shaderProgram) this.gl.deleteProgram(this.shaderProgram);
+		if (this.pickFbo) this.gl.deleteFramebuffer(this.pickFbo);
+		if (this.pickRbo) this.gl.deleteRenderbuffer(this.pickRbo);
+		this.pickFbo = null;
+		this.pickRbo = null;
 	}
 	
 	constructor(canvas: HTMLCanvasElement, params: Params)
@@ -268,41 +270,51 @@ export class BlackHoleRenderer
 		this.setParams(this.pparams);
 		this.scheduleFrame();
 	}
-	screenClicked(inputX: number, inputY: number): boolean
-	{
-		const gl = this.gl;
-		const canvas = gl.canvas as HTMLCanvasElement;
-		const rect = canvas.getBoundingClientRect();
-		if (inputX < rect.left || inputX >= rect.right || inputY < rect.top || inputY >= rect.bottom)
+		screenClicked(inputX: number, inputY: number): boolean
 		{
-			return false;
+			const gl = this.gl;
+
+			if (this.isDisposed || !this.isActive || gl.isContextLost())
+			{
+				return false;
+			}
+			const rect = this.canvas.getBoundingClientRect();
+			if (rect.width <= 0 || rect.height <= 0 || !Number.isFinite(inputX) || !Number.isFinite(inputY) || inputX < 0 || inputX >= rect.width || inputY < 0 || inputY >= rect.height)
+			{
+				return false;
+			}
+
+			const w = gl.drawingBufferWidth;
+			const h = gl.drawingBufferHeight;
+
+			if (w <= 0 || h <= 0)
+			{
+				return false;
+			}
+			const pixelX = Math.min(w - 1, Math.floor((inputX / rect.width) * w));
+			const pixelY = h - 1 - Math.min(h - 1, Math.floor((inputY / rect.height) * h));
+			this.ensurePickTarget();
+			const rgba = new Uint8Array(4);
+			gl.useProgram(this.shaderProgram);
+			gl.bindFramebuffer(gl.FRAMEBUFFER, this.pickFbo);
+			try
+			{
+				gl.viewport(0, 0, w, h);
+				gl.enable(gl.SCISSOR_TEST);
+				gl.scissor(pixelX, pixelY, 1, 1);
+				gl.clearColor(0, 0, 0, 0);
+				gl.clear(gl.COLOR_BUFFER_BIT);
+				gl.uniform1f(this.uclickPass, 1);
+				this.drawFullscreen();
+				gl.readPixels(pixelX, pixelY, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, rgba );
+			}
+			finally
+			{
+				gl.uniform1f(this.uclickPass, 0);
+				gl.disable(gl.SCISSOR_TEST);
+				gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+				gl.viewport(0, 0, w, h);
+			}
+			return rgba[0] > 127;
 		}
-
-		const w = gl.drawingBufferWidth;
-		const h = gl.drawingBufferHeight;
-		const pixelX = Math.min(w - 1, Math.max(0, Math.floor(((inputX - rect.left) / rect.width) * w)));
-		const pixelY = Math.min(h - 1, Math.max(0, Math.floor(((rect.bottom - inputY) / rect.height) * h)));
-
-		this.ensurePickTarget();
-
-		gl.bindFramebuffer(gl.FRAMEBUFFER, this.pickFbo);
-		gl.viewport(0, 0, w, h);
-		gl.enable(gl.SCISSOR_TEST);
-		gl.scissor(pixelX, pixelY, 1, 1);
-		gl.clearColor(0, 0, 0, 0);
-		gl.clear(gl.COLOR_BUFFER_BIT);
-
-		gl.useProgram(this.shaderProgram);
-		gl.uniform1f(this.uclickPass, 1);
-		this.drawFullscreen();
-
-		const rgba = new Uint8Array(4);
-		gl.readPixels(pixelX, pixelY, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, rgba);
-
-		gl.uniform1f(this.uclickPass, 0);
-		gl.disable(gl.SCISSOR_TEST);
-		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-
-		return rgba[0] > 127;
-	}
 }
