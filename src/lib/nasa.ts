@@ -51,7 +51,6 @@ function score(item: RawItem, tokens: string[]): number {
 function toPhoto(item: RawItem): NasaPhoto | null {
   const d = item.data?.[0];
   if (!d) return null;
-  // Only accept http(s) media, and upgrade to https to avoid mixed-content blocks.
   const https = (u: string) => u.replace(/^http:\/\//i, 'https://');
   const links = (item.links ?? [])
     .map((l) => l.href)

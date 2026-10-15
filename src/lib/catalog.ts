@@ -5,7 +5,7 @@ export interface Dso {
   name: string | null;
   type: string;
   mag: number;
-  size: number; // arcminutes
+  size: number;
   ra: number;
   dec: number;
   con: string;

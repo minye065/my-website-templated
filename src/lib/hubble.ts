@@ -1,7 +1,8 @@
 import manifest from '../data/hubbleShowcase.json';
 import overrides from '../data/imageOverrides.json';
 
-export interface ShowcaseImage {
+export interface ShowcaseImage
+{
   url: string;
   title: string;
   source: string;
@@ -9,18 +10,19 @@ export interface ShowcaseImage {
 
 type ShowcaseManifest = Record<string, { url: string; title: string; source: string }>;
 
-// catalog.ts rows that duplicate a Caldwell/Messier object under an NGC designation
-const ALIASES: Record<string, string> = {
-  'NGC 7000': 'C20', // North America Nebula
-  'NGC 5139': 'C80', // Omega Centauri
-  'NGC 253': 'C65', // Sculptor Galaxy
-  'NGC 3372': 'C92', // Carina Nebula
-  'NGC 6960': 'C34', // Veil Nebula
-  'NGC 2237': 'C49', // Rosette Nebula
-  'NGC 4565': 'C38', // Needle Galaxy
+const ALIASES: Record<string, string> =
+{
+  'NGC 7000': 'C20',
+  'NGC 5139': 'C80',
+  'NGC 253': 'C65',
+  'NGC 3372': 'C92',
+  'NGC 6960': 'C34',
+  'NGC 2237': 'C49',
+  'NGC 4565': 'C38',
 };
 
-export function findShowcase(desig: string): ShowcaseImage | null {
+export function findShowcase(desig: string): ShowcaseImage | null
+{
   const aliased = ALIASES[desig] ?? '';
   const entry =
     (overrides as ShowcaseManifest)[desig] ??

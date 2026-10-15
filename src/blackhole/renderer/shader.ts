@@ -10,7 +10,6 @@ gl_Position = vec4(aPos, 0.0, 1.0);
 export const fragmentShader = `#version 300 es
 precision highp float;
 out vec4 fragColor;
-precision highp float;
 
 uniform vec2  resolution;
 uniform float time;
@@ -34,14 +33,13 @@ uniform float roll;
 uniform float fieldOfView;
 uniform float starAmount;
 uniform float starBrightness;
-uniform float nebula;
+uniform float nebulosity;
 uniform float steps;
 uniform float stepScale;
 uniform float offsetX;
 uniform float offsetY;
 uniform float clickPass;
 
-const float PI = 3.14159265359;
 
 float hash13(vec3 p3)
 {
@@ -174,7 +172,7 @@ float sky(vec3 rd)
     s *= starBrightness;
 
     float n = fbm(rd * 2.1 + 3.7);
-    s += pow(max(n - 0.44, 0.0), 2.0) * 0.75 * nebula;
+    s += pow(max(n - 0.44, 0.0), 2.0) * 0.75 * nebulosity;
     return s;
 }
 
@@ -229,7 +227,7 @@ void main()
         {
             float k = prev.y / (prev.y - pos.y);
             float em = diskEmission(mix(prev, pos, k), rd);
-            float alpha = clamp(em * 1.0, 0.0, 1.0);
+            float alpha = clamp(em, 0.0, 1.0);
             bright += transmittance * em;
             transmittance *= (1.0 - alpha);
         }

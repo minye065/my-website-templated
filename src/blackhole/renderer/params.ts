@@ -1,6 +1,6 @@
 export type Params =
 {
-  hue: number; //deg
+  hue: number;
   saturation: number;
   drift: number;
   exposure: number;
@@ -16,13 +16,12 @@ export type Params =
   azimuth: number;
   distance: number;
   roll: number;
-  focalLength: number;
+  fieldOfView: number;
   autoRotate: number;
   starAmount: number;
   starBrightness: number;
   nebulosity: number;
   quality: number;
-  bloom: number;
   offsetX: number;
   offsetY: number;
 };
@@ -45,13 +44,12 @@ export const DEFAULTS: Params =
   azimuth: 20,
   distance: 25,
   roll: -28,
-  focalLength: 1.7,
+  fieldOfView: 1.7,
   autoRotate: 0.35,
   starAmount: 1.0,
   starBrightness: 1.2,
   nebulosity: 0.5,
   quality: 0.6,
-  bloom: 0.45,
   offsetX: -0.002,
   offsetY: 0,
 };

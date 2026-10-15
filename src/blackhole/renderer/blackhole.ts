@@ -7,7 +7,6 @@ export class BlackHoleRenderer
 	private gl: WebGL2RenderingContext;
 	private shaderProgram: WebGLProgram;
 	private pparams: Params;
-	private arrayIndex: GLint;
 	private vertexArray: WebGLVertexArrayObject;
 	private buffer: WebGLBuffer;
 	private cache: Record<string, WebGLUniformLocation | null> = {};
@@ -25,6 +24,7 @@ export class BlackHoleRenderer
 	private pickW = 0;
 	private pickH = 0;
 	private uclickPass: WebGLUniformLocation | null = null;
+
 
 	private cacheLocations()
 	{
@@ -47,10 +47,10 @@ export class BlackHoleRenderer
 		this.cache["azimuth"] = this.gl.getUniformLocation(this.shaderProgram, "azimuth");
 		this.cache["distance"] = this.gl.getUniformLocation(this.shaderProgram, "distance");
 		this.cache["roll"] = this.gl.getUniformLocation(this.shaderProgram, "roll");
-		this.cache["focalLength"] = this.gl.getUniformLocation(this.shaderProgram, "fieldOfView");
+		this.cache["fieldOfView"] = this.gl.getUniformLocation(this.shaderProgram, "fieldOfView");
 		this.cache["starAmount"] = this.gl.getUniformLocation(this.shaderProgram, "starAmount");
 		this.cache["starBrightness"] = this.gl.getUniformLocation(this.shaderProgram, "starBrightness");
-		this.cache["nebulosity"] = this.gl.getUniformLocation(this.shaderProgram, "nebula");
+		this.cache["nebulosity"] = this.gl.getUniformLocation(this.shaderProgram, "nebulosity");
 		this.cache["steps"] = this.gl.getUniformLocation(this.shaderProgram, "steps");
 		this.cache["stepScale"] = this.gl.getUniformLocation(this.shaderProgram, "stepScale");
 		this.cache["offsetX"] = this.gl.getUniformLocation(this.shaderProgram, "offsetX");
@@ -80,7 +80,7 @@ export class BlackHoleRenderer
 		this.gl.uniform1f(this.cache["inclination"], params.inclination * DEG);
 		this.gl.uniform1f(this.cache["distance"], params.distance);
 		this.gl.uniform1f(this.cache["roll"], params.roll * DEG);
-		this.gl.uniform1f(this.cache["focalLength"], params.focalLength);
+		this.gl.uniform1f(this.cache["fieldOfView"], params.fieldOfView);
 		this.gl.uniform1f(this.cache["starAmount"], params.starAmount);
 		this.gl.uniform1f(this.cache["starBrightness"], params.starBrightness);
 		this.gl.uniform1f(this.cache["nebulosity"], params.nebulosity);
@@ -110,8 +110,8 @@ export class BlackHoleRenderer
 		this.requestAnimFrameID = null;
 		if (this.isDisposed || !this.isActive || this.gl.isContextLost()) return;
 
-		let currentIterationTime = performance.now();
-		let deltaTime = Math.min(Math.max((currentIterationTime - this.lastTime) / 1000, 0), 0.05);
+		const currentIterationTime = performance.now();
+		const deltaTime = Math.min(Math.max((currentIterationTime - this.lastTime) / 1000, 0), 0.05);
 		this.elapsed += deltaTime;
 		this.lastTime = currentIterationTime;
 
@@ -120,14 +120,11 @@ export class BlackHoleRenderer
 		this.frame += 1;
 		this.gl.uniform1f(this.cache["frame"], this.frame % 64);
 
-		if(this.pparams.autoRotate != 0)
+		if(this.pparams.autoRotate !== 0)
 		{
 			this.spinPhase += deltaTime * this.pparams.autoRotate * 2.2 * (Math.PI / 180);
 		}
 		this.gl.uniform1f(this.cache["azimuth"], this.pparams.azimuth * (Math.PI / 180) + this.spinPhase);
-		this.gl.bindFramebuffer(this.gl.FRAMEBUFFER, null);
-		this.gl.viewport(0, 0, this.gl.drawingBufferWidth, this.gl.drawingBufferHeight);
-		this.gl.disable(this.gl.SCISSOR_TEST);
 		this.gl.uniform1f(this.uclickPass, 0);
 		this.drawFullscreen();
 		this.scheduleFrame();
@@ -161,8 +158,6 @@ export class BlackHoleRenderer
 	private drawFullscreen(): void
 	{
 		const gl = this.gl;
-		gl.useProgram(this.shaderProgram);
-		gl.bindVertexArray(this.vertexArray);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 		gl.bindVertexArray(null);
 	}
@@ -220,16 +215,16 @@ export class BlackHoleRenderer
 		window.addEventListener("resize", this.resize);
 		this.canvas = canvas;
 		this.pparams = params;
-		const gl = canvas.getContext("webgl2", { preserveDrawingBuffer: true });
-		if(gl == null)
+		const gl = canvas.getContext("webgl2");
+		if(gl === null)
 		{
 			throw new Error("failed to get context for webgl2");
 		}
 		this.gl = gl;
 
-		let vshader = this.gl.createShader(this.gl.VERTEX_SHADER);
-		let fshader = this.gl.createShader(this.gl.FRAGMENT_SHADER);
-		if(vshader == null || fshader == null)
+		const vshader = this.gl.createShader(this.gl.VERTEX_SHADER);
+		const fshader = this.gl.createShader(this.gl.FRAGMENT_SHADER);
+		if(vshader === null || fshader === null)
 		{
 			throw new Error("failed to create shaders");
 		}
@@ -239,11 +234,11 @@ export class BlackHoleRenderer
 		this.gl.compileShader(fshader);
 		this.vertexShader = vshader;
 		this.fragmentShader = fshader;
-		if((this.gl.getShaderParameter(vshader, this.gl.COMPILE_STATUS) == false))
+		if(!this.gl.getShaderParameter(vshader, this.gl.COMPILE_STATUS))
 		{
 			throw new Error(this.gl.getShaderInfoLog(vshader) + "shaders failed to compile");
 		}
-		else if((this.gl.getShaderParameter(fshader, this.gl.COMPILE_STATUS) == false))
+		else if(!this.gl.getShaderParameter(fshader, this.gl.COMPILE_STATUS))
 		{
 			throw new Error(this.gl.getShaderInfoLog(fshader) + "shaders failed to compile");
 		}
@@ -251,70 +246,69 @@ export class BlackHoleRenderer
 		this.gl.attachShader(this.shaderProgram, vshader);
 		this.gl.attachShader(this.shaderProgram, fshader);
 		this.gl.linkProgram(this.shaderProgram);
-		this.cacheLocations();
 		if(this.gl.getProgramParameter(this.shaderProgram, this.gl.LINK_STATUS) == false)
 		{
 			throw new Error(this.gl.getProgramInfoLog(this.shaderProgram) + "link status is false");
 		}
-
+		this.cacheLocations();
 		this.vertexArray = this.gl.createVertexArray();
 		this.gl.bindVertexArray(this.vertexArray);
 		this.buffer = this.gl.createBuffer();
 		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.buffer);
 		this.gl.bufferData(this.gl.ARRAY_BUFFER, new Float32Array([-1, -1,  1, -1, -1, 1,  1, 1]), this.gl.STATIC_DRAW);
-		this.arrayIndex = this.gl.getAttribLocation(this.shaderProgram, "aPos");
-		this.gl.enableVertexAttribArray(this.arrayIndex);
-		this.gl.vertexAttribPointer(this.arrayIndex, 2, this.gl.FLOAT, false, 0, 0);
+		const arrayIndex = this.gl.getAttribLocation(this.shaderProgram, "aPos");
+		this.gl.enableVertexAttribArray(arrayIndex);
+		this.gl.vertexAttribPointer(arrayIndex, 2, this.gl.FLOAT, false, 0, 0);
 		this.gl.bindVertexArray(null);
 		this.resize();
 		this.setParams(this.pparams);
 		this.scheduleFrame();
 	}
-		screenClicked(inputX: number, inputY: number): boolean
+	screenClicked(inputX: number, inputY: number): boolean
+	{
+		const gl = this.gl;
+
+		if (this.isDisposed || !this.isActive || gl.isContextLost())
 		{
-			const gl = this.gl;
-
-			if (this.isDisposed || !this.isActive || gl.isContextLost())
-			{
-				return false;
-			}
-			const rect = this.canvas.getBoundingClientRect();
-			if (rect.width <= 0 || rect.height <= 0 || !Number.isFinite(inputX) || !Number.isFinite(inputY) || inputX < 0 || inputX >= rect.width || inputY < 0 || inputY >= rect.height)
-			{
-				return false;
-			}
-
-			const w = gl.drawingBufferWidth;
-			const h = gl.drawingBufferHeight;
-
-			if (w <= 0 || h <= 0)
-			{
-				return false;
-			}
-			const pixelX = Math.min(w - 1, Math.floor((inputX / rect.width) * w));
-			const pixelY = h - 1 - Math.min(h - 1, Math.floor((inputY / rect.height) * h));
-			this.ensurePickTarget();
-			const rgba = new Uint8Array(4);
-			gl.useProgram(this.shaderProgram);
-			gl.bindFramebuffer(gl.FRAMEBUFFER, this.pickFbo);
-			try
-			{
-				gl.viewport(0, 0, w, h);
-				gl.enable(gl.SCISSOR_TEST);
-				gl.scissor(pixelX, pixelY, 1, 1);
-				gl.clearColor(0, 0, 0, 0);
-				gl.clear(gl.COLOR_BUFFER_BIT);
-				gl.uniform1f(this.uclickPass, 1);
-				this.drawFullscreen();
-				gl.readPixels(pixelX, pixelY, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, rgba );
-			}
-			finally
-			{
-				gl.uniform1f(this.uclickPass, 0);
-				gl.disable(gl.SCISSOR_TEST);
-				gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-				gl.viewport(0, 0, w, h);
-			}
-			return rgba[0] > 127;
+			return false;
 		}
+		const rect = this.canvas.getBoundingClientRect();
+		if (rect.width <= 0 || rect.height <= 0 || !Number.isFinite(inputX) || !Number.isFinite(inputY) || inputX < 0 || inputX >= rect.width || inputY < 0 || inputY >= rect.height)
+		{
+			return false;
+		}
+
+		const w = gl.drawingBufferWidth;
+		const h = gl.drawingBufferHeight;
+
+		if (w <= 0 || h <= 0)
+		{
+			return false;
+		}
+		const pixelX = Math.min(w - 1, Math.floor((inputX / rect.width) * w));
+		const pixelY = h - 1 - Math.min(h - 1, Math.floor((inputY / rect.height) * h));
+		this.ensurePickTarget();
+		const rgba = new Uint8Array(4);
+		gl.useProgram(this.shaderProgram);
+		gl.bindFramebuffer(gl.FRAMEBUFFER, this.pickFbo);
+		try
+		{
+			gl.viewport(0, 0, w, h);
+			gl.enable(gl.SCISSOR_TEST);
+			gl.scissor(pixelX, pixelY, 1, 1);
+			gl.clearColor(0, 0, 0, 0);
+			gl.clear(gl.COLOR_BUFFER_BIT);
+			gl.uniform1f(this.uclickPass, 1);
+			this.drawFullscreen();
+			gl.readPixels(pixelX, pixelY, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, rgba );
+		}
+		finally
+		{
+			gl.uniform1f(this.uclickPass, 0);
+			gl.disable(gl.SCISSOR_TEST);
+			gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+			gl.viewport(0, 0, w, h);
+		}
+		return rgba[0] > 127;
+	}
 }
