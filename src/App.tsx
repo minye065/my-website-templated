@@ -23,6 +23,7 @@ export default function App()
   const [inAnimation, setAnimationState] = useState(false);
   const transitionTimeoutRef = useRef<number | null>(null);
   const transitioningRef = useRef(false);
+  const animationRef = useRef<number>(0);
 
   // useEffect(() =>
   // {
@@ -47,7 +48,8 @@ export default function App()
   //   return () => window.removeEventListener('keydown', onKey);
   // }, [lightbox, showPanel]);
 
-  useEffect(() => () => {
+  useEffect(() => () =>
+    {
     if (transitionTimeoutRef.current !== null) {
         window.clearTimeout(transitionTimeoutRef.current);
     }
@@ -58,17 +60,20 @@ export default function App()
     if (!canvasRef.current) return;
     const renderer = new BlackHoleRenderer(canvasRef.current, DEFAULTS);
     rendererRef.current = renderer;
-    return () => {
+    return () =>
+    {
       renderer.dispose();
       rendererRef.current = null;
     };
   }, []);
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     rendererRef.current?.setActive(currentSiteState === 'entry');
   }, [currentSiteState]);
 
-  useEffect(() => {
+  useEffect(() =>
+    {
     const handleKeyDown = (e: KeyboardEvent) =>
     {
       if (e.key.toLowerCase() === 'p')
@@ -89,12 +94,34 @@ export default function App()
       return next;
     });
   }, []);
+  const clamp = (value: number, min: number, max: number): number =>
+  {
+    return Math.min(Math.max(value, min), max);
+  };
+
+  const animation = (zoomIn: boolean, durationMS: number, zoomDist: number): void =>
+  {
+    cancelAnimationFrame(animationRef.current);
+    const startTime = performance.now();
+    const start = params;
+    const animateFrame = (): void =>
+    {
+      const t = clamp((performance.now() - startTime) / durationMS, 0, 1);
+      const p = zoomIn ? 1 - Math.pow(1 - t, 3) : t * t * t;
+      const eased = p * 0.84 + t * 0.16;
+      rendererRef.current?.setParams({ ...start, distance: start.distance + (zoomDist - start.distance) * eased });
+      if (t < 1) animationRef.current = requestAnimationFrame(animateFrame);
+    };
+    animationRef.current = requestAnimationFrame(animateFrame);
+  };
 
   const triggerAnimation = useCallback((targetState: siteState) =>
   {
     if (transitioningRef.current || targetState === currentSiteState) return;
     transitioningRef.current = true;
     setAnimationState(true);
+    if (targetState === 'profile') animation(true, 400, 2);
+    else if (targetState === 'starMap') animation(false, 400, 20);
     transitionTimeoutRef.current = window.setTimeout(() =>
     {
       setCurrentSiteState(targetState);
@@ -102,7 +129,7 @@ export default function App()
       transitioningRef.current = false;
       transitionTimeoutRef.current = null;
     }, 400);
-  }, [currentSiteState]);
+  }, [currentSiteState, params]);
 
   const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) =>
   {

@@ -82,7 +82,8 @@ export default function StarMap({ active }: { active: boolean })
     let raf = 0;
     let pulseTick = 0;
     let last = 0;
-    const loop = (t: number) => {
+    const loop = (t: number) =>
+    {
       raf = requestAnimationFrame(loop);
       const dt = last ? Math.min(t - last, 100) : 16;
       last = t;

@@ -1,4 +1,4 @@
-import { DEFAULTS, type Params } from "./params";
+import { type Params } from "./params";
 import { vertexShader, fragmentShader } from './shader'
 export class BlackHoleRenderer
 {
@@ -158,6 +158,7 @@ export class BlackHoleRenderer
 	private drawFullscreen(): void
 	{
 		const gl = this.gl;
+		gl.bindVertexArray(this.vertexArray);
 		gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 		gl.bindVertexArray(null);
 	}
