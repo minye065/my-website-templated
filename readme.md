@@ -1,13 +1,24 @@
 # Personal website
-Personal portfolio website with some of my projects that are near done or somewhat presentable, made with tailwindcss, react, vite, animejs and motionjs and hosted on github pages
-
-![Main Page](https://cdn.hackclub.com/01a02f6f-3b41-7f32-a418-d4642c990347/screenshot_2026-08-22_211501.png)
+Personal portfolio website with some of my projects and a starmap
 
 Link: https://minye065.github.io/my-website-templated/
 
+Animation for the blackhole
+![Blackhole animation](https://user-cdn.hackclub-assets.com/01a1480e-0c5e-730b-ba22-8d892fcdf81b/aaaaaaaa__1_.mp4)
+
+My minimalistic profile
+![Profile](https://cdn.hackclub.com/01a160cf-26dd-722c-a45a-01f8ad5eab98/image.png)
+
+The nasa starmap
+![Starmap](https://cdn.hackclub.com/01a160ce-b728-75da-b4e1-fba59887ddc3/image.png)
+
+
+Link again: https://minye065.github.io/my-website-templated/
+
 Try pressing o on an info panel
 Stars are pulled from nasa, mainly the cadwell amd messier catalogs
-
+Blackhole is made with webgl
+Website made with react and tailwind
 To host yourself:
 Prerequisites: Github acc that can host pages, github acc, git, ide
 
