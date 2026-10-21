@@ -5,8 +5,7 @@ Personal portfolio website with some of my projects that are near done or somewh
 
 Link: https://minye065.github.io/my-website-templated/
 
-Try pressing s on an info panel
-Did you find the thing? (its not that hidden)
+Try pressing o on an info panel
 Stars are pulled from nasa, mainly the cadwell amd messier catalogs
 
 To host yourself:

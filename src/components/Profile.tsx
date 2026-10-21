@@ -30,15 +30,11 @@ export default function Profile() {
     <div
       ref={ref}
       onWheel={(e) => e.stopPropagation()}
-      className="pointer-events-auto max-h-[86vh] w-full max-w-lg overflow-y-auto bg-[#080b08]/[0.9] p-6 text-[#dfdfdf] sm:p-8"
+      className="pointer-events-auto max-h-[86vh] w-full max-w-lg overflow-y-auto bg-[#023d2c]/[0.9] p-6 text-[#ffffff] sm:p-8"
       data-scroll
     >
-      <header data-reveal className="opacity-0">
-        <p className="mt-1 text-xs">Bunch of stuff i made</p>
-      </header>
-
-      <section data-reveal className="mt-6 opacity-0">
-        <h2 className="font-mono text-[10px] tracking-[0.25em]">
+      <section data-reveal className="opacity-0">
+        <h2 className="font-mono text-[10px] tracking-[0.25em] text-[#f0a1cd]">
           PROJECTS
         </h2>
 
@@ -49,9 +45,9 @@ export default function Profile() {
               href={p.href}
               target={isExternal(p.href) ? '_blank' : undefined}
               rel={isExternal(p.href) ? 'noreferrer noopener' : undefined}
-              className="group flex flex-col rounded-xl bg-white/[0.02] p-3.5 transition hover:bg-white/[0.04]">
+              className="group flex flex-col rounded-xl p-3.5 transition hover:bg-white/[0.04] bg-[#003324]">
               <div className="flex items-baseline justify-between gap-2">
-                <span className="font-mono text-xs font-semibold group-hover:underline">
+                <span className="font-mono text-xs font-semibold">
                   {p.name}
                 </span>
                 <span className="font-mono text-[9px]">→</span>
@@ -66,11 +62,11 @@ export default function Profile() {
       </section>
 
       <section data-reveal className="mt-7 opacity-0">
-        <h2 className="font-mono text-[10px] tracking-[0.25em]">
+        <h2 className="font-mono text-[10px] tracking-[0.25em] text-[#f0a1cd]">
           CONTACT
         </h2>
 
-        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 font-mono text-[11.5px]">
+        <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 font-mono text-[11.5px] text-[#ffc50c]">
           {CONTACTS.map((c) => (
             <a
               key={c.label}

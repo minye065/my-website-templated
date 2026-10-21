@@ -81,7 +81,7 @@ const openLightbox = useLightbox();
   };
   useEffect(() => {
   const onKeyDown = (e: KeyboardEvent) => {
-    if (e.key.toLowerCase() !== 's' || e.repeat) return;
+    if (e.key.toLowerCase() !== 'o' || e.repeat) return;
 
     const target = e.target as HTMLElement | null;
 

@@ -55,6 +55,9 @@ export class BlackHoleRenderer
 		this.cache["stepScale"] = this.gl.getUniformLocation(this.shaderProgram, "stepScale");
 		this.cache["offsetX"] = this.gl.getUniformLocation(this.shaderProgram, "offsetX");
 		this.cache["offsetY"] = this.gl.getUniformLocation(this.shaderProgram, "offsetY");
+		this.cache["warp"] = this.gl.getUniformLocation(this.shaderProgram, "warp");
+		this.cache["tidal"] = this.gl.getUniformLocation(this.shaderProgram, "tidal");
+		this.cache["lookTurn"] = this.gl.getUniformLocation(this.shaderProgram, "lookTurn");
 		this.uclickPass = this.gl.getUniformLocation(this.shaderProgram, "clickPass");
 	}
 
@@ -90,6 +93,14 @@ export class BlackHoleRenderer
 		this.gl.uniform1f(this.cache["offsetY"], params.offsetY);
 	}
 
+	setWarp(warp: number, tidal: number, lookTurnDegrees: number)
+	{
+		if(this.isDisposed) return;
+		this.gl.useProgram(this.shaderProgram);
+		this.gl.uniform1f(this.cache["warp"], warp);
+		this.gl.uniform1f(this.cache["tidal"], tidal);
+		this.gl.uniform1f(this.cache["lookTurn"], lookTurnDegrees * Math.PI / 180);
+	}
 	private resize = () =>
 	{
 		this.canvas.width = this.canvas.clientWidth;

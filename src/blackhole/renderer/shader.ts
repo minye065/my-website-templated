@@ -39,6 +39,9 @@ uniform float stepScale;
 uniform float offsetX;
 uniform float offsetY;
 uniform float clickPass;
+uniform float warp;
+uniform float tidal;
+uniform float lookTurn;
 
 
 float hash13(vec3 p3)
@@ -163,23 +166,41 @@ float starLayer(vec3 rd, float scale, float thresh, float size)
     return (core + halo) * mag;
 }
 
-float sky(vec3 rd)
+float skyStars(vec3 rd)
 {
     float s = 0.0;
     s += starLayer(rd,  34.0, 1.0 - 0.30 * starAmount, 0.048);
     s += starLayer(rd,  63.0, 1.0 - 0.22 * starAmount, 0.038) * 0.72;
     s += starLayer(rd, 112.0, 1.0 - 0.16 * starAmount, 0.030) * 0.46;
-    s *= starBrightness;
+    return s * starBrightness;
+}
 
+float skyNebula(vec3 rd)
+{
     float n = fbm(rd * 2.1 + 3.7);
-    s += pow(max(n - 0.44, 0.0), 2.0) * 0.75 * nebulosity;
-    return s;
+    return pow(max(n - 0.44, 0.0), 2.0) * 0.75 * nebulosity;
+}
+
+float sky(vec3 rd)
+{
+    return skyStars(rd) + skyNebula(rd);
 }
 
 void main()
 {
     vec2 uv = ((gl_FragCoord.xy - 0.5 * resolution) / resolution.y);
     uv -= vec2(offsetX, offsetY);
+
+    if (warp > 0.001)
+    {
+        float radius = length(uv);
+        float swirlAngle = warp * 1.6 * exp(-radius * 2.2) * (0.4 + tidal);
+        float swirlCos = cos(swirlAngle), swirlSin = sin(swirlAngle);
+        uv = mat2(swirlCos, swirlSin, -swirlSin, swirlCos) * uv;
+        uv *= 1.0 + warp * 0.35 * radius;
+        uv.x *= 1.0 + tidal * 1.6;
+        uv.y *= 1.0 - tidal * 0.35;
+    }
 
     float ci = cos(inclination), si = sin(inclination);
     float ca = cos(azimuth), sa = sin(azimuth);
@@ -188,11 +209,27 @@ void main()
     vec3 fwd = normalize(-camPos);
     vec3 right = normalize(cross(fwd, vec3(0.0, 1.0, 0.0)));
     vec3 up = cross(right, fwd);
+    vec3 velocityDirection = fwd;
+    float turnCos = cos(lookTurn), turnSin = sin(lookTurn);
+    vec3 turnedForward = fwd * turnCos + right * turnSin;
+    right = right * turnCos - fwd * turnSin;
+    fwd = turnedForward;
     float cr = cos(roll), sr = sin(roll);
     vec3 rx =  right * cr + up * sr;
     vec3 ry = -right * sr + up * cr;
 
-    vec3 rd = normalize(fwd * fieldOfView + rx * uv.x + ry * uv.y);
+    float beta = warp > 0.001 ? clamp(inversesqrt(max(distance, 1.0)), 0.0, 0.985) * warp : 0.0;
+    vec3 viewRay = normalize(fwd * fieldOfView + rx * uv.x + ry * uv.y);
+    float observedCos = dot(viewRay, velocityDirection);
+    float restCos = (observedCos - beta) / (1.0 - beta * observedCos);
+    float restSin = sqrt(max(1.0 - restCos * restCos, 0.0));
+    vec3 perpendicular = viewRay - velocityDirection * observedCos;
+    perpendicular /= max(length(perpendicular), 1e-5);
+    float lorentz = inversesqrt(max(1.0 - beta * beta, 1e-4));
+    float shift = 1.0 / (lorentz * max(1.0 - beta * observedCos, 1e-3));
+
+    vec3 rd = normalize(velocityDirection * restCos + perpendicular * restSin);
+    vec3 viewDir = viewRay;
     vec3 pos = camPos;
 
     vec3 Lv = cross(pos, rd);
@@ -238,7 +275,38 @@ void main()
         fragColor = vec4(captured ? 1.0 : 0.0, 0.0, 0.0, 1.0);
         return;
     }
-    if (!captured) bright += transmittance * sky(rd);
-    bright = pow(max(bright * exposure, 0.0), contrast);
-    fragColor = vec4(ramp(bright), 1.0);
+
+    float skyBright = captured ? 0.0 : sky(rd);
+    vec3 baseColor = ramp(pow(max((bright + transmittance * skyBright) * exposure, 0.0), contrast));
+    if (warp <= 0.001)
+    {
+        fragColor = vec4(baseColor, 1.0);
+        return;
+    }
+
+    float beam = pow(clamp(shift, 0.05, 12.0), 3.0);
+    vec3 warpColor = ramp(pow(max(bright * beam * exposure, 0.0), contrast));
+
+    if (!captured)
+    {
+        vec3 radial = viewDir - fwd * dot(viewDir, fwd);
+        radial /= max(length(radial), 1e-4);
+        vec3 axis = cross(radial, fwd);
+        float streak = 0.04 * warp * warp;
+        float split = 0.008 * warp;
+        vec3 stars = vec3(0.0);
+        for (int k = 0; k < 8; k++)
+        {
+            vec3 tapDir = normalize(rd - radial * (streak * float(k) / 7.0));
+            stars += vec3(skyStars(normalize(tapDir + axis * split)), skyStars(tapDir), skyStars(normalize(tapDir - axis * split)));
+        }
+        stars = stars / 8.0 * (1.0 + 5.0 * warp);
+        float blueAmount = clamp(log2(shift) * 0.5, -1.0, 1.0) * 0.5 + 0.5;
+        vec3 tint = mix(vec3(1.0, 0.42, 0.28), vec3(0.62, 0.84, 1.45), blueAmount);
+        vec3 skyColor = (stars + vec3(skyNebula(rd))) * tint * beam * transmittance * exposure;
+        skyColor = 1.0 - exp(-skyColor);
+        warpColor = 1.0 - (1.0 - warpColor) * (1.0 - skyColor);
+    }
+
+    fragColor = vec4(mix(baseColor, warpColor, smoothstep(0.0, 0.35, warp)), 1.0);
 }`

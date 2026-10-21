@@ -11,9 +11,19 @@ export const PROJECTS: Project[] = [
     href: 'https://github.com/minye065/my-website-templated',
   },
   {
-      name: 'aud',
-      desc: 'in progress audio player of sorts',
-      href: 'https://github.com/minye065/Aud',
+    name: 'aud',
+    desc: 'in progress audio player of sorts',
+    href: 'https://github.com/minye065/Aud',
+  },
+  {
+    name: 'spi math slave',
+    desc: 'a chip designed from the tiny tapeout template',
+    href: 'https://github.com/minye065/firstAsic',
+  },
+  {
+    name: 'insatiate',
+    desc: 'a game? (not even close to working)',
+    href: 'https://github.com/minye065/insatiate',
   },
 ];
 
