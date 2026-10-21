@@ -5,10 +5,10 @@ export class BlackHoleRenderer
 
 	private canvas: HTMLCanvasElement;
 	private gl: WebGL2RenderingContext;
-	private shaderProgram: WebGLProgram;
+	private shaderProgram!: WebGLProgram;
 	private pparams: Params;
-	private vertexArray: WebGLVertexArrayObject;
-	private buffer: WebGLBuffer;
+	private vertexArray!: WebGLVertexArrayObject;
+	private buffer!: WebGLBuffer;
 	private cache: Record<string, WebGLUniformLocation | null> = {};
 	private lastTime: number = performance.now();
 	private requestAnimFrameID:number | null = null;
@@ -24,6 +24,8 @@ export class BlackHoleRenderer
 	private pickW = 0;
 	private pickH = 0;
 	private uclickPass: WebGLUniformLocation | null = null;
+	private renderScale = 0.7;
+	private warpState = { warp: 0, tidal: 0, lookTurnDegrees: 0 };
 
 
 	private cacheLocations()
@@ -96,6 +98,7 @@ export class BlackHoleRenderer
 	setWarp(warp: number, tidal: number, lookTurnDegrees: number)
 	{
 		if(this.isDisposed) return;
+		this.warpState = { warp, tidal, lookTurnDegrees };
 		this.gl.useProgram(this.shaderProgram);
 		this.gl.uniform1f(this.cache["warp"], warp);
 		this.gl.uniform1f(this.cache["tidal"], tidal);
@@ -103,8 +106,8 @@ export class BlackHoleRenderer
 	}
 	private resize = () =>
 	{
-		this.canvas.width = this.canvas.clientWidth;
-		this.canvas.height = this.canvas.clientHeight;
+		this.canvas.width = Math.max(1, Math.round(this.canvas.clientWidth * this.renderScale));
+		this.canvas.height = Math.max(1, Math.round(this.canvas.clientHeight * this.renderScale));
 		this.gl.useProgram(this.shaderProgram);
 		this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 		this.gl.uniform2f(this.cache["resolution"], this.canvas.width, this.canvas.height);
@@ -207,6 +210,8 @@ export class BlackHoleRenderer
 		}
 
 		window.removeEventListener("resize", this.resize);
+		this.canvas.removeEventListener("webglcontextlost", this.handleContextLost);
+		this.canvas.removeEventListener("webglcontextrestored", this.handleContextRestored);
 
 		this.gl.useProgram(null);
 		this.gl.bindVertexArray(null);
@@ -222,18 +227,34 @@ export class BlackHoleRenderer
 		this.pickRbo = null;
 	}
 	
-	constructor(canvas: HTMLCanvasElement, params: Params)
+	private handleContextLost = (event: Event) =>
 	{
-		window.addEventListener("resize", this.resize);
-		this.canvas = canvas;
-		this.pparams = params;
-		const gl = canvas.getContext("webgl2");
-		if(gl === null)
+		event.preventDefault();
+		if (this.requestAnimFrameID !== null)
 		{
-			throw new Error("failed to get context for webgl2");
+			cancelAnimationFrame(this.requestAnimFrameID);
+			this.requestAnimFrameID = null;
 		}
-		this.gl = gl;
+	}
 
+	private handleContextRestored = () =>
+	{
+		if (this.isDisposed) return;
+		this.cache = {};
+		this.pickFbo = null;
+		this.pickRbo = null;
+		this.pickW = 0;
+		this.pickH = 0;
+		this.createResources();
+		this.resize();
+		this.setParams(this.pparams);
+		this.setWarp(this.warpState.warp, this.warpState.tidal, this.warpState.lookTurnDegrees);
+		this.lastTime = performance.now();
+		this.scheduleFrame();
+	}
+
+	private createResources(): void
+	{
 		const vshader = this.gl.createShader(this.gl.VERTEX_SHADER);
 		const fshader = this.gl.createShader(this.gl.FRAGMENT_SHADER);
 		if(vshader === null || fshader === null)
@@ -272,6 +293,22 @@ export class BlackHoleRenderer
 		this.gl.enableVertexAttribArray(arrayIndex);
 		this.gl.vertexAttribPointer(arrayIndex, 2, this.gl.FLOAT, false, 0, 0);
 		this.gl.bindVertexArray(null);
+	}
+
+	constructor(canvas: HTMLCanvasElement, params: Params)
+	{
+		window.addEventListener("resize", this.resize);
+		this.canvas = canvas;
+		this.pparams = params;
+		const gl = canvas.getContext("webgl2");
+		if(gl === null)
+		{
+			throw new Error("failed to get context for webgl2");
+		}
+		this.gl = gl;
+		canvas.addEventListener("webglcontextlost", this.handleContextLost);
+		canvas.addEventListener("webglcontextrestored", this.handleContextRestored);
+		this.createResources();
 		this.resize();
 		this.setParams(this.pparams);
 		this.scheduleFrame();

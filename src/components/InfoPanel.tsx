@@ -19,11 +19,26 @@ export default function InfoPanel({
   const fromShowcase = useRef(false);
   const fallbackArgs = useRef<{ key: string; queries: string[]; tokens: string[] } | null>(null);
   const [transparentBackground, setTransparentBackground] = useState(
-  () => localStorage.getItem('panelTransparent') === 'true'
-  );
+  () =>
+  {
+    try
+    {
+      return localStorage.getItem('panelTransparent') === 'true';
+    }
+    catch
+    {
+      return false;
+    }
+  });
   useEffect(() => {
-  localStorage.setItem('panelTransparent', String(transparentBackground));
-  }, [transparentBackground]);  
+    try
+    {
+      localStorage.setItem('panelTransparent', String(transparentBackground));
+    }
+    catch
+    {
+    }
+  }, [transparentBackground]);
 const openLightbox = useLightbox();
 
   useEffect(() => {

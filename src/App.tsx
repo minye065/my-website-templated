@@ -3,9 +3,9 @@ import { AnimatePresence, motion } from 'motion/react';
 import StarMap from './components/StarMap';
 import Profile from './components/Profile';
 import Lightbox, { LightboxContext, type LightboxImage } from './components/Lightbox';
-import { BlackHoleRenderer } from '././blackhole/renderer/blackhole';
-import { Params, DEFAULTS } from '././blackhole/renderer/params';
-import Controls from '././components/BlackHoleControls';
+import { BlackHoleRenderer } from './blackhole/renderer/blackhole';
+import { Params, DEFAULTS } from './blackhole/renderer/params';
+import Controls from './components/BlackHoleControls';
 
 type siteState = 'entry' | 'starMap' | 'profile';
 
@@ -60,28 +60,6 @@ export default function App()
   const vignetteOverlayRef = useRef<HTMLDivElement>(null);
   const bloomOverlayRef = useRef<HTMLDivElement>(null);
   const graySkyOverlayRef = useRef<HTMLDivElement>(null);
-  // useEffect(() =>
-  // {
-  //   if(currentSiteState !== 'starMap') { return };
-  //
-  //   const onKey = (e: KeyboardEvent) =>
-  //   {
-  //     if (e.key !== 'Escape') return;
-  //     if (lightbox)
-  //     {
-  //       setLightbox(null);
-  //       return;
-  //     }
-  //     if (showPanel)
-  //     {
-  //       setShowPanel(false);
-  //       return;
-  //     }
-  //     setExplore(false);
-  //   };
-  //   window.addEventListener('keydown', onKey);
-  //   return () => window.removeEventListener('keydown', onKey);
-  // }, [lightbox, showPanel]);
 
   useEffect(() => () =>
   {
@@ -112,6 +90,8 @@ export default function App()
     {
     const handleKeyDown = (e: KeyboardEvent) =>
     {
+      const focused = document.activeElement;
+      if (focused instanceof HTMLInputElement || focused instanceof HTMLTextAreaElement) return;
       if (e.key.toLowerCase() === 'p')
       {
         setShowControls(prev => !prev);
@@ -346,6 +326,23 @@ export default function App()
     }
   }, [currentSiteState]);
 
+  useEffect(() =>
+  {
+    const onKey = (e: KeyboardEvent) =>
+    {
+      if (e.key !== 'Escape') return;
+      if (lightbox)
+      {
+        e.stopImmediatePropagation();
+        setLightbox(null);
+        return;
+      }
+      if (currentSiteState === 'profile') triggerAnimation('entry');
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [lightbox, currentSiteState, triggerAnimation]);
+
   const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) =>
   {
     if (!canvasRef.current || !rendererRef.current) return;
@@ -357,12 +354,10 @@ export default function App()
     if (isInsideBlackHole)
     {
       triggerAnimation('profile');
-      console.log('inside');
     }
     else
     {
       triggerAnimation('starMap');
-      console.log('outside');
     }
   };
 
@@ -393,7 +388,7 @@ export default function App()
             currentSiteState === 'starMap' ? 'visible' : 'invisible pointer-events-none'
           }`}
         >
-          <StarMap active={currentSiteState === 'starMap'} />
+          <StarMap active={currentSiteState === 'starMap'} onExit={() => triggerAnimation('entry')} />
 
           {currentSiteState === 'starMap' && (
             <>

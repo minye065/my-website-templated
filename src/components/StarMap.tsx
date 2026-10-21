@@ -3,9 +3,8 @@ import { AnimatePresence, motion } from 'motion/react';
 import { CATALOG } from '../lib/catalog';
 import { buildInfo } from '../lib/info';
 import { drawSky, loadNasaBackground, type Layers, pick, type Selection } from '../lib/render';
-import { clamp, makeView, updateView, wrapLon } from '../lib/sky';
+import { clamp, makeView, updateView } from '../lib/sky';
 import InfoPanel from './InfoPanel';
-import TourCard from './TourCard';
 
 const LAYER_LABELS: { key: keyof Layers; label: string }[] =
 [
@@ -20,7 +19,7 @@ interface SearchHit
   sel: Selection;
 }
 
-export default function StarMap({ active }: { active: boolean })
+export default function StarMap({ active, onExit }: { active: boolean; onExit: () => void })
 {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -33,7 +32,7 @@ export default function StarMap({ active }: { active: boolean })
   const [ready, setReady] = useState(false);
   const [selected, setSelected] = useState<Selection | null>(null);
   const [query, setQuery] = useState('');
-  const [layers, setLayers] = useState<Layers>({ background: true, labels: true, deepSky: true });
+  const [layers, setLayers] = useState<Layers>({ labels: true, deepSky: true });
 
   const selRef = useRef<Selection | null>(null);
   selRef.current = selected;
@@ -41,6 +40,8 @@ export default function StarMap({ active }: { active: boolean })
   layersRef.current = layers;
   const activeRef = useRef(active);
   activeRef.current = active;
+  const onExitRef = useRef(onExit);
+  onExitRef.current = onExit;
   const info = useMemo(() => (selected ? buildInfo(selected) : null), [selected]);
   const keysPressed = useRef<Set<string>>(new Set());
 
@@ -79,6 +80,8 @@ export default function StarMap({ active }: { active: boolean })
 
   useEffect(() =>
   {
+    if (!ready || !active) return;
+    dirty.current = true;
     let raf = 0;
     let pulseTick = 0;
     let last = 0;
@@ -94,20 +97,14 @@ export default function StarMap({ active }: { active: boolean })
         const a = anim.current;
         const k = clamp((t - a.t0) / a.dur, 0, 1);
         const e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
-        v.ra = wrapLon(a.from[0] + wrapLon(a.to[0] - a.from[0]) * e);
+        v.ra = a.from[0] + (a.to[0] - a.from[0]) * e;
         v.dec = a.from[1] + (a.to[1] - a.from[1]) * e;
         v.fov = a.from[2] * Math.pow(a.to[2] / a.from[2], e);
         updateView(v);
         dirty.current = true;
         if (k >= 1) anim.current = null;
       }
-      else if (!activeRef.current)
-      {
-        v.ra = wrapLon(v.ra + dt * 0.00008 * v.fov);
-        updateView(v);
-        dirty.current = true;
-      }
-      if (activeRef.current && keysPressed.current.size > 0)
+      if (keysPressed.current.size > 0)
       {
         let dx = 0;
         let dy = 0;
@@ -122,7 +119,7 @@ export default function StarMap({ active }: { active: boolean })
           const ndx = dx / len;
           const ndy = dy / len;
           const moveSpeed = 0.0006 * dt * v.fov;
-          v.ra = wrapLon(v.ra - ndx * moveSpeed);
+          v.ra = v.ra - ndx * moveSpeed;
           v.dec = clamp(v.dec - ndy * moveSpeed, -88, 88);
           updateView(v);
           dirty.current = true;
@@ -142,7 +139,7 @@ export default function StarMap({ active }: { active: boolean })
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [ready]);
+  }, [ready, active]);
 
   useEffect(() =>
     {
@@ -159,6 +156,24 @@ export default function StarMap({ active }: { active: boolean })
 
       const handleKeyDown = (e: KeyboardEvent) =>
       {
+        if (e.key === 'Escape')
+        {
+          const focused = document.activeElement;
+          if (focused instanceof HTMLInputElement)
+          {
+            setQuery('');
+            focused.blur();
+          }
+          else if (selRef.current)
+          {
+            setSelected(null);
+          }
+          else
+          {
+            onExitRef.current();
+          }
+          return;
+        }
         if (document.activeElement?.tagName === 'INPUT') return;
         const key = e.key.toLowerCase();
         if (['w', 'a', 's', 'd'].includes(key))
@@ -241,27 +256,6 @@ export default function StarMap({ active }: { active: boolean })
     const targetDec = anim.current ? anim.current.to[1] : v.dec;
     flyTo(targetRa, targetDec, targetFov, 220);
   }, [flyTo]);
-
-  useEffect(() =>
-  {
-    if (active) return;
-    const pool = CATALOG.dsos.map((d, i) => ({ d, i })).filter((x) => x.d.name && x.d.mag < 9.5);
-    let idx = Math.floor(Math.random() * pool.length);
-    const go = () =>
-    {
-      const { d, i } = pool[idx];
-      flyTo(d.ra, d.dec, 40, 4000);
-      setSelected({ kind: 'dso', index: i });
-      idx = (idx + 1 + Math.floor(Math.random() * 5)) % pool.length;
-    };
-    const t0 = window.setTimeout(go, 1200);
-    const t = window.setInterval(go, 14000);
-    return () =>
-    {
-      window.clearTimeout(t0);
-      window.clearInterval(t);
-    };
-  }, [active, flyTo]);
 
   useEffect(() =>
   {
@@ -388,10 +382,6 @@ export default function StarMap({ active }: { active: boolean })
         ref={canvasRef}
         className={`block h-full w-full ${active ? 'cursor-grab active:cursor-grabbing' : ''}`}
       />
-
-      <AnimatePresence mode="wait">
-        {!active && info && <TourCard key={info.key} info={info} />}
-      </AnimatePresence>
 
       <AnimatePresence>
         {active && (

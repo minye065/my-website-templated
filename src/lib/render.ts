@@ -1,10 +1,9 @@
 import { CATALOG, type Catalog, type Dso, dsoFamily, FAMILY_COLOR } from './catalog';
-import { clamp, OUT, projectRaDec, type View, wrapLon } from './sky';
+import { clamp, OUT, projectRaDec, type View } from './sky';
 
 const TAU = Math.PI * 2;
 
 export interface Layers {
-  background: boolean;
   labels: boolean;
   deepSky: boolean;
 }
@@ -58,16 +57,15 @@ function drawBackground(ctx: CanvasRenderingContext2D, v: View): void {
   const skyW = 360 * v.scale;
   const skyH = 180 * v.scale;
   const topY = v.cy + (v.dec - 90) * v.scale;
-  let x = v.cx + wrapLon(0 - v.ra) * v.scale;
-  while (x > 0) x -= skyW;
+  const leftX = v.cx - v.ra * v.scale;
   ctx.save();
   ctx.globalAlpha = 1;
   ctx.imageSmoothingEnabled = true;
-  for (; x < v.w; x += skyW) ctx.drawImage(bgImage, x, topY, skyW, skyH);
+  ctx.drawImage(bgImage, leftX, topY, skyW, skyH);
   ctx.restore();
 }
 
-export function dsoRadius(v: View, _d: Dso): number {
+export function dsoRadius(v: View): number {
   return clamp(v.scale * 0.3, 5, 30);
 }
 
@@ -200,18 +198,54 @@ function drawNebula(ctx: CanvasRenderingContext2D, px: number, py: number, r: nu
   drawSpark(ctx, px - r * 0.3, py + r * 0.25, r * 0.14);
 }
 
-function drawDsos(ctx: CanvasRenderingContext2D, v: View, cat: Catalog, labels: boolean, boxes: Box[]): void {
+interface LabelCandidate
+{
+  d: Dso;
+  index: number;
+  px: number;
+  py: number;
+  r: number;
+  col: string;
+}
+
+interface LabelSpot
+{
+  x: number;
+  y: number;
+  align: CanvasTextAlign;
+  box: Box;
+}
+
+function labelSpots(c: LabelCandidate, tw: number): LabelSpot[]
+{
+  const { px, py, r } = c;
+  const halfH = 7;
+  const gap = 4;
+  const belowY = py + r + 9;
+  const aboveY = py - r - 9;
+  return [
+    { x: px, y: belowY, align: 'center', box: { x0: px - tw / 2 - 3, y0: belowY - halfH, x1: px + tw / 2 + 3, y1: belowY + halfH } },
+    { x: px + r + gap, y: py, align: 'left', box: { x0: px + r + gap - 3, y0: py - halfH, x1: px + r + gap + tw + 3, y1: py + halfH } },
+    { x: px - r - gap, y: py, align: 'right', box: { x0: px - r - gap - tw - 3, y0: py - halfH, x1: px - r - gap + 3, y1: py + halfH } },
+    { x: px, y: aboveY, align: 'center', box: { x0: px - tw / 2 - 3, y0: aboveY - halfH, x1: px + tw / 2 + 3, y1: aboveY + halfH } },
+  ];
+}
+
+function drawDsos(ctx: CanvasRenderingContext2D, v: View, cat: Catalog, labels: boolean, boxes: Box[], selectedIndex: number): void
+{
   ctx.save();
   ctx.font = '600 11px ui-sans-serif, system-ui, sans-serif';
   ctx.textBaseline = 'middle';
-  for (const d of cat.dsos) {
-    if (!projectRaDec(v, d.ra, d.dec)) continue;
+  const candidates: LabelCandidate[] = [];
+  cat.dsos.forEach((d, index) =>
+  {
+    if (!projectRaDec(v, d.ra, d.dec)) return;
     const px = OUT.x;
     const py = OUT.y;
-    if (px < -60 || py < -60 || px > v.w + 60 || py > v.h + 60) continue;
+    if (px < -60 || py < -60 || px > v.w + 60 || py > v.h + 60) return;
     const fam = dsoFamily(d.type);
     const col = FAMILY_COLOR[fam];
-    const r = dsoRadius(v, d);
+    const r = dsoRadius(v);
     ctx.globalAlpha = 0.16;
     ctx.fillStyle = col;
     ctx.beginPath();
@@ -222,17 +256,38 @@ function drawDsos(ctx: CanvasRenderingContext2D, v: View, cat: Catalog, labels: 
     else if (fam === 'cluster') drawCluster(ctx, px, py, r, col);
     else drawNebula(ctx, px, py, r, col);
     ctx.globalAlpha = 1;
-    if (!labels) continue;
-    if (v.fov > 110 && d.mag > 7) continue;
-    const t = d.desig;
-    ctx.textAlign = 'center';
-    const tw = ctx.measureText(t).width;
-    const ly = py + r + 9;
-    if (!fits(boxes, { x0: px - tw / 2 - 3, y0: ly - 7, x1: px + tw / 2 + 3, y1: ly + 7 })) continue;
-    ctx.fillStyle = col;
+    if (!labels) return;
+    if (index !== selectedIndex && v.fov > 110 && d.mag > 7) return;
+    candidates.push({ d, index, px, py, r, col });
+  });
+
+  for (const c of candidates)
+  {
+    const ir = c.r * 0.6;
+    boxes.push({ x0: c.px - ir, y0: c.py - ir, x1: c.px + ir, y1: c.py + ir });
+  }
+
+  candidates.sort((a, b) =>
+    (a.index === selectedIndex ? -1 : 0) - (b.index === selectedIndex ? -1 : 0) ||
+    a.d.mag - b.d.mag ||
+    b.d.size - a.d.size
+  );
+
+  for (const c of candidates)
+  {
+    const text = c.d.desig;
+    const spots = labelSpots(c, ctx.measureText(text).width);
+    let spot = spots.find((s) => fits(boxes, s.box));
+    if (!spot && c.index === selectedIndex)
+    {
+      spot = spots[0];
+      boxes.push(spot.box);
+    }
+    if (!spot) continue;
+    ctx.textAlign = spot.align;
+    ctx.fillStyle = c.col;
     ctx.globalAlpha = 0.95;
-    ctx.fillText(t, px, ly);
-    ctx.globalAlpha = 1;
+    ctx.fillText(text, spot.x, spot.y);
   }
   ctx.restore();
 }
@@ -262,12 +317,12 @@ export function drawSky(ctx: CanvasRenderingContext2D, v: View, layers: Layers, 
   ctx.setTransform(v.dpr, 0, 0, v.dpr, 0, 0);
   ctx.fillStyle = '#03040a';
   ctx.fillRect(0, 0, v.w, v.h);
-  if (layers.background) drawBackground(ctx, v);
+  drawBackground(ctx, v);
   const boxes: Box[] = [];
-  if (layers.deepSky) drawDsos(ctx, v, CATALOG, layers.labels, boxes);
+  if (layers.deepSky) drawDsos(ctx, v, CATALOG, layers.labels, boxes, selected?.kind === 'dso' ? selected.index : -1);
   if (selected && selected.kind === 'dso') {
     const d = CATALOG.dsos[selected.index];
-    if (d && projectRaDec(v, d.ra, d.dec)) drawReticle(ctx, OUT.x, OUT.y, dsoRadius(v, d), time);
+    if (d && projectRaDec(v, d.ra, d.dec)) drawReticle(ctx, OUT.x, OUT.y, dsoRadius(v), time);
   }
   ctx.restore();
 }
@@ -280,7 +335,7 @@ export function pick(v: View, mx: number, my: number, layers: Layers): Selection
       const d = CATALOG.dsos[i];
       if (!projectRaDec(v, d.ra, d.dec)) continue;
       const dd = Math.hypot(OUT.x - mx, OUT.y - my);
-      const reach = Math.max(22, dsoRadius(v, d));
+      const reach = Math.max(22, dsoRadius(v));
       if (dd < reach && dd < bestScore) {
         bestScore = dd;
         best = { kind: 'dso', index: i };

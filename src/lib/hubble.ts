@@ -17,8 +17,8 @@ const ALIASES: Record<string, string> =
   'NGC 253': 'C65',
   'NGC 3372': 'C92',
   'NGC 6960': 'C34',
-  'NGC 2237': 'C49',
   'NGC 4565': 'C38',
+  'NGC 2070': 'C103',
 };
 
 export function findShowcase(desig: string): ShowcaseImage | null
