@@ -4,7 +4,7 @@ Personal portfolio website with some of my projects and a starmap
 Link: https://minye065.github.io/my-website-templated/
 
 Animation for the blackhole
-<video src="https://user-cdn.hackclub-assets.com/01a1480e-0c5e-730b-ba22-8d892fcdf81b/aaaaaaaa__1_.mp4" width="100%" controls></video>
+<video src="bin/animation.mp4" width="100%" controls autoplay loop muted playsinline></video>
 My minimalistic profile
 ![Profile](https://cdn.hackclub.com/01a160cf-26dd-722c-a45a-01f8ad5eab98/image.png)
 
